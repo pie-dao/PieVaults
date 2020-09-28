@@ -9,40 +9,18 @@ const Diamond = artifacts.require('Diamond')
 const DiamondCutFacet = artifacts.require('DiamondCutFacet')
 const DiamondLoupeFacet = artifacts.require('DiamondLoupeFacet')
 const ERC20Facet = artifacts.require('ERC20Facet')
-let zeroAddress = '0x0000000000000000000000000000000000000000'
+
 contract('ERC20Test', async accounts => {
     let diamond;
     let diamondCutFacet
     let diamondLoupeFacet
     let erc20Facet;
 
-    function getSelectors (contract) {
-      const selectors = contract.abi.reduce((acc, val) => {
-        if (val.type === 'function') {
-          acc.push(val.signature)
-          return acc
-        } else {
-          return acc
-        }
-      }, [])
-      return selectors
-    }
-
     before(async () => {
         web3.eth.defaultAccount = accounts[0]
         diamond = await Diamond.deployed()
         diamondCutFacet = new web3.eth.Contract(DiamondCutFacet.abi, diamond.address)
         diamondLoupeFacet = new web3.eth.Contract(DiamondLoupeFacet.abi, diamond.address)
-        erc20Facet = await ERC20Facet.deployed()
-
-        // Attach erc20facet to diamond
-        selectors = getSelectors(erc20Facet)
-        await diamondCutFacet.methods.diamondCut(
-          [[erc20Facet.address, selectors]], zeroAddress, '0x'
-        ).send({ from: web3.eth.defaultAccount, gas: 1000000 })
-
-        // Reinitialize erc20Facet.
-        // Using the diamond address
         erc20Facet = new web3.eth.Contract(ERC20Facet.abi, diamond.address);
     });
 

@@ -13,7 +13,7 @@ const BasketFacet = artifacts.require('BasketFacet')
 const CallFacet = artifacts.require('CallFacet')
 const ERC20Factory = artifacts.require('ERC20Factory')
 const ERC20 = artifacts.require('ERC20')
-let zeroAddress = '0x0000000000000000000000000000000000000000'
+
 contract('CallFacetTest', async accounts => {
     let diamond;
     let diamondCutFacet
@@ -22,43 +22,15 @@ contract('CallFacetTest', async accounts => {
     let basketFacet;
     let erc20Factory;
 
-    function getSelectors (contract) {
-      const selectors = contract.abi.reduce((acc, val) => {
-        if (val.type === 'function') {
-          acc.push(val.signature)
-          return acc
-        } else {
-          return acc
-        }
-      }, [])
-      return selectors
-    }
-
     before(async () => {
         web3.eth.defaultAccount = accounts[0]
         diamond = await Diamond.deployed()
         diamondCutFacet = new web3.eth.Contract(DiamondCutFacet.abi, diamond.address)
         diamondLoupeFacet = new web3.eth.Contract(DiamondLoupeFacet.abi, diamond.address)
-        callFacet = await CallFacet.deployed()
-        basketFacet = await BasketFacet.deployed()
-        erc20Factory = await ERC20Factory.deployed()
-
-        // Attach CallFacet to diamond
-        selectors = getSelectors(callFacet)
-        await diamondCutFacet.methods.diamondCut(
-          [[callFacet.address, selectors]], zeroAddress, '0x'
-        ).send({ from: web3.eth.defaultAccount, gas: 1000000 })
-
-        // Attach BasketFacet to diamond
-        selectors = getSelectors(basketFacet)
-        await diamondCutFacet.methods.diamondCut(
-          [[basketFacet.address, selectors]], zeroAddress, '0x'
-        ).send({ from: web3.eth.defaultAccount, gas: 1000000 })
-
-        // Reinitialize callFacet, basketFacet
-        // Using the diamond address
         callFacet = new web3.eth.Contract(CallFacet.abi, diamond.address);
         basketFacet = new web3.eth.Contract(BasketFacet.abi, diamond.address);
+        erc20Factory = await ERC20Factory.deployed()
+
         await basketFacet.methods.setMaxCap(parseEther("1000")).send({
           from: web3.eth.defaultAccount, gas: 1000000
         })

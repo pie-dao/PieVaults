@@ -12,7 +12,7 @@ const BasketFacet = artifacts.require('BasketFacet')
 const ERC20Facet = artifacts.require('ERC20Facet')
 const ERC20Factory = artifacts.require('ERC20Factory')
 const ERC20 = artifacts.require('ERC20')
-let zeroAddress = '0x0000000000000000000000000000000000000000'
+
 contract('BasketFacetTest', async accounts => {
     let diamond;
     let diamondCutFacet
@@ -21,18 +21,6 @@ contract('BasketFacetTest', async accounts => {
     let erc20Facet;
     let erc20Factory;
     let tokens = [];
-
-    function getSelectors (contract) {
-      const selectors = contract.abi.reduce((acc, val) => {
-        if (val.type === 'function') {
-          acc.push(val.signature)
-          return acc
-        } else {
-          return acc
-        }
-      }, [])
-      return selectors
-    }
 
     const waitNBlocks = async n => {
       //const sendAsync = promisify(web3.currentProvider.sendAsync);
@@ -53,26 +41,9 @@ contract('BasketFacetTest', async accounts => {
         diamond = await Diamond.deployed()
         diamondCutFacet = new web3.eth.Contract(DiamondCutFacet.abi, diamond.address)
         diamondLoupeFacet = new web3.eth.Contract(DiamondLoupeFacet.abi, diamond.address)
-        basketFacet = await BasketFacet.deployed()
-        erc20Facet = await ERC20Facet.deployed()
-        erc20Factory = await ERC20Factory.deployed()
-
-        // Attach basketFacet to diamond
-        selectors = getSelectors(basketFacet)
-        await diamondCutFacet.methods.diamondCut(
-          [[basketFacet.address, selectors]], zeroAddress, '0x'
-        ).send({ from: web3.eth.defaultAccount, gas: 1000000 })
-
-        // Attach erc20facet to diamond
-        selectors = getSelectors(erc20Facet)
-        await diamondCutFacet.methods.diamondCut(
-          [[erc20Facet.address, selectors]], zeroAddress, '0x'
-        ).send({ from: web3.eth.defaultAccount, gas: 1000000 })
-
-        // Reinitialize both basketFacet and erc20Facet.
-        // Using the diamond address
         basketFacet = new web3.eth.Contract(BasketFacet.abi, diamond.address);
         erc20Facet = new web3.eth.Contract(ERC20Facet.abi, diamond.address);
+        erc20Factory = await ERC20Factory.deployed()
 
         tokens = []
         for (let i = 0; i < 3; i++) {

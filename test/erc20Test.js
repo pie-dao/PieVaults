@@ -9,6 +9,7 @@ const Diamond = artifacts.require('Diamond')
 const DiamondCutFacet = artifacts.require('DiamondCutFacet')
 const DiamondLoupeFacet = artifacts.require('DiamondLoupeFacet')
 const ERC20Facet = artifacts.require('ERC20Facet')
+const zeroAddress = '0x0000000000000000000000000000000000000000'
 
 contract('ERC20Test', async accounts => {
     let diamond;
@@ -63,13 +64,13 @@ contract('ERC20Test', async accounts => {
       })
       it('Initialize twice', async () => {
         await erc20Facet.methods.initialize(
-          parseEther("10"), "TEST 2", "TST2", 18
+          parseEther("15"), "TEST 2", "TST2", 18
         ).send({from: accounts[0], gas: 1000000})
         balance = await erc20Facet.methods.balanceOf(accounts[0]).call();
-        expect(balance).to.be.eq(parseEther("20"));
+        expect(balance).to.be.eq(parseEther("25"));
 
         totalSupply = await erc20Facet.methods.totalSupply().call();
-        expect(totalSupply).to.be.eq(parseEther("20"));
+        expect(totalSupply).to.be.eq(parseEther("25"));
 
         name = await erc20Facet.methods.name().call();
         expect(name).to.be.eq("TEST 2");
@@ -91,7 +92,7 @@ contract('ERC20Test', async accounts => {
       })
       it('transfer exceeds balance', async () => {
         balance = await erc20Facet.methods.balanceOf(accounts[0]).call();
-        expect(balance).to.be.eq(parseEther("20"));
+        expect(balance).to.be.eq(parseEther("25"));
 
         await expect (
           erc20Facet.methods.transfer(
@@ -101,20 +102,37 @@ contract('ERC20Test', async accounts => {
       })
       it('transfer success', async () => {
         balance = await erc20Facet.methods.balanceOf(accounts[0]).call();
-        expect(balance).to.be.eq(parseEther("20"));
+        expect(balance).to.be.eq(parseEther("25"));
 
         totalSupply = await erc20Facet.methods.totalSupply().call();
-        expect(totalSupply).to.be.eq(parseEther("20"));
+        expect(totalSupply).to.be.eq(parseEther("25"));
 
         await erc20Facet.methods.transfer(
           accounts[1], parseEther("5")
         ).send({from: accounts[0], gas: 1000000})
 
         balance = await erc20Facet.methods.balanceOf(accounts[0]).call();
-        expect(balance).to.be.eq(parseEther("15"));
+        expect(balance).to.be.eq(parseEther("20"));
 
         balance = await erc20Facet.methods.balanceOf(accounts[1]).call();
         expect(balance).to.be.eq(parseEther("5"));
+
+        totalSupply = await erc20Facet.methods.totalSupply().call();
+        expect(totalSupply).to.be.eq(parseEther("25"));
+      })
+      it('transfer burn address', async () => {
+        balance = await erc20Facet.methods.balanceOf(accounts[0]).call();
+        expect(balance).to.be.eq(parseEther("20"));
+
+        totalSupply = await erc20Facet.methods.totalSupply().call();
+        expect(totalSupply).to.be.eq(parseEther("25"));
+
+        await erc20Facet.methods.transfer(
+          zeroAddress, parseEther("5")
+        ).send({from: accounts[0], gas: 1000000})
+
+        balance = await erc20Facet.methods.balanceOf(accounts[0]).call();
+        expect(balance).to.be.eq(parseEther("15"));
 
         totalSupply = await erc20Facet.methods.totalSupply().call();
         expect(totalSupply).to.be.eq(parseEther("20"));

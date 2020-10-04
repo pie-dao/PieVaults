@@ -30,7 +30,7 @@ module.exports = async (deployer, network, accounts) => {
   deployer.deploy(ERC20Factory);
   await deployer.deploy(DiamondFactory);
   dm = await DiamondFactory.deployed();
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 15; i++) {
     await deployer.deploy(DiamondCutFacet);
     await deployer.deploy(DiamondLoupeFacet);
     await deployer.deploy(CallFacet);

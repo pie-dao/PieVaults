@@ -6,7 +6,7 @@ const { use } = require("chai");
 const { solidity } = require("ethereum-waffle");
 const { BigNumber } = require("ethers");
 use(solidity);
-const Diamond = artifacts.require("Diamond");
+const DiamondFactory = artifacts.require("DiamondFactory");
 const DiamondCutFacet = artifacts.require("DiamondCutFacet");
 const DiamondLoupeFacet = artifacts.require("DiamondLoupeFacet");
 const BasketFacet = artifacts.require("BasketFacet");
@@ -15,57 +15,62 @@ const ERC20Factory = artifacts.require("ERC20Factory");
 const ERC20 = artifacts.require("ERC20");
 
 contract("CallFacetTest", async (accounts) => {
-  let diamond;
-  let diamondCutFacet;
-  let diamondLoupeFacet;
-  let callFacet;
-  let basketFacet;
   let erc20Factory;
+  let dm = [];
 
   before(async () => {
     web3.eth.defaultAccount = accounts[0];
-    diamond = await Diamond.deployed();
-    diamondCutFacet = new web3.eth.Contract(
-      DiamondCutFacet.abi,
-      diamond.address
-    );
-    diamondLoupeFacet = new web3.eth.Contract(
-      DiamondLoupeFacet.abi,
-      diamond.address
-    );
-    callFacet = new web3.eth.Contract(CallFacet.abi, diamond.address);
-    basketFacet = new web3.eth.Contract(BasketFacet.abi, diamond.address);
-    erc20Factory = await ERC20Factory.deployed();
+    diamondFactory = await DiamondFactory.deployed();
+    events = await diamondFactory.getPastEvents("DiamondCreated", {
+      fromBlock: 0,
+      toBlock: "latest",
+    });
 
-    await basketFacet.methods.setMaxCap(parseEther("1000")).send({
+    for (let i = 0; i < events.length; i++) {
+      const diamond = events[i].returnValues.tokenAddress;
+      dm.push({
+        address: diamond,
+        diamondCutFacet: new web3.eth.Contract(DiamondCutFacet.abi, diamond),
+        diamondLoupeFacet: new web3.eth.Contract(
+          DiamondLoupeFacet.abi,
+          diamond
+        ),
+        basketFacet: new web3.eth.Contract(BasketFacet.abi, diamond),
+        callFacet: new web3.eth.Contract(CallFacet.abi, diamond),
+      });
+    }
+
+    await dm[0].basketFacet.methods.setMaxCap(parseEther("1000")).send({
       from: web3.eth.defaultAccount,
       gas: 1000000,
     });
+
+    erc20Factory = await ERC20Factory.deployed();
   });
 
   describe("Call test", async () => {
     it("Test lock call", async () => {
       latestBlock = await web3.eth.getBlockNumber();
-      lock = await basketFacet.methods.getLock().call();
+      lock = await dm[0].basketFacet.methods.getLock().call();
       expect(lock).to.eq(true);
 
-      await callFacet.methods
+      await dm[0].callFacet.methods
         .call(
-          [basketFacet.options.address],
-          [basketFacet.methods.setLock(latestBlock - 1).encodeABI()],
+          [dm[0].address],
+          [dm[0].basketFacet.methods.setLock(latestBlock - 1).encodeABI()],
           [0]
         )
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
 
-      lock = await basketFacet.methods.getLock().call();
+      lock = await dm[0].basketFacet.methods.getLock().call();
       expect(lock).to.eq(false);
     });
     it("Test reentry call", async () => {
       await expect(
-        callFacet.methods
+        dm[0].callFacet.methods
           .call(
-            [basketFacet.options.address],
-            [basketFacet.methods.joinPool(parseEther("1")).encodeABI()],
+            [dm[0].address],
+            [dm[0].basketFacet.methods.joinPool(parseEther("1")).encodeABI()],
             [0]
           )
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
@@ -74,26 +79,26 @@ contract("CallFacetTest", async (accounts) => {
       );
     });
     it("Send contract ether", async () => {
-      ether = await web3.eth.getBalance(diamond.address);
+      ether = await web3.eth.getBalance(dm[0].address);
       expect(ether).to.eq("0");
 
       await web3.eth.sendTransaction({
         from: accounts[2],
-        to: diamond.address,
+        to: dm[0].address,
         value: web3.utils.toWei("10", "ether"),
       });
 
-      ether = await web3.eth.getBalance(diamond.address);
+      ether = await web3.eth.getBalance(dm[0].address);
       expect(ether).to.eq(parseEther("10"));
 
       userBalanceBefore = await web3.eth.getBalance(accounts[4]);
       userBalanceBefore = BigNumber.from(userBalanceBefore);
 
-      await callFacet.methods
+      await dm[0].callFacet.methods
         .call([accounts[4]], [[]], [parseEther("9")])
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
 
-      ether = await web3.eth.getBalance(diamond.address);
+      ether = await web3.eth.getBalance(dm[0].address);
       expect(ether).to.eq(parseEther("1"));
 
       userBalanceAfter = await web3.eth.getBalance(accounts[4]);
@@ -112,18 +117,18 @@ contract("CallFacetTest", async (accounts) => {
       address = token.receipt.rawLogs[0].address;
       token = new web3.eth.Contract(ERC20.abi, address);
 
-      balance = await token.methods.balanceOf(diamond.address).call();
+      balance = await token.methods.balanceOf(dm[0].address).call();
       expect(balance).to.eq("0");
 
-      await token.methods.transfer(diamond.address, parseEther("1000")).send({
+      await token.methods.transfer(dm[0].address, parseEther("1000")).send({
         from: web3.eth.defaultAccount,
         gas: 1000000,
       });
 
-      balance = await token.methods.balanceOf(diamond.address).call();
+      balance = await token.methods.balanceOf(dm[0].address).call();
       expect(balance).to.eq(parseEther("1000"));
 
-      await callFacet.methods
+      await dm[0].callFacet.methods
         .call(
           [token.options.address],
           [token.methods.transfer(accounts[0], parseEther("800")).encodeABI()],
@@ -131,25 +136,25 @@ contract("CallFacetTest", async (accounts) => {
         )
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
 
-      balance = await token.methods.balanceOf(diamond.address).call();
+      balance = await token.methods.balanceOf(dm[0].address).call();
       expect(balance).to.eq(parseEther("200"));
     });
     it("Lock + send ether + send erc20", async () => {
       latestBlock = await web3.eth.getBlockNumber();
-      lock = await basketFacet.methods.getLock().call();
+      lock = await dm[0].basketFacet.methods.getLock().call();
       expect(lock).to.eq(false);
 
-      ether = await web3.eth.getBalance(diamond.address);
+      ether = await web3.eth.getBalance(dm[0].address);
       expect(ether).to.eq(parseEther("1"));
 
-      balance = await token.methods.balanceOf(diamond.address).call();
+      balance = await token.methods.balanceOf(dm[0].address).call();
       expect(balance).to.eq(parseEther("200"));
 
-      await callFacet.methods
+      await dm[0].callFacet.methods
         .call(
-          [basketFacet.options.address, token.options.address, accounts[4]],
+          [dm[0].address, token.options.address, accounts[4]],
           [
-            basketFacet.methods.setLock(latestBlock + 2).encodeABI(),
+            dm[0].basketFacet.methods.setLock(latestBlock + 2).encodeABI(),
             token.methods.transfer(accounts[0], parseEther("200")).encodeABI(),
             [],
           ],
@@ -157,13 +162,13 @@ contract("CallFacetTest", async (accounts) => {
         )
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
 
-      lock = await basketFacet.methods.getLock().call();
+      lock = await dm[0].basketFacet.methods.getLock().call();
       expect(lock).to.eq(true);
 
-      ether = await web3.eth.getBalance(diamond.address);
+      ether = await web3.eth.getBalance(dm[0].address);
       expect(ether).to.eq("0");
 
-      balance = await token.methods.balanceOf(diamond.address).call();
+      balance = await token.methods.balanceOf(dm[0].address).call();
       expect(balance).to.eq("0");
     });
   });

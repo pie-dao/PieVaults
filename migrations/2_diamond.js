@@ -1,4 +1,4 @@
-const Diamond = artifacts.require("Diamond");
+const DiamondFactory = artifacts.require("DiamondFactory");
 const DiamondCutFacet = artifacts.require("DiamondCutFacet");
 const DiamondLoupeFacet = artifacts.require("DiamondLoupeFacet");
 const OwnershipFacet = artifacts.require("OwnershipFacet");
@@ -26,35 +26,41 @@ function getSelectors(contract) {
   return selectors;
 }
 
-module.exports = function (deployer, network, accounts) {
+module.exports = async (deployer, network, accounts) => {
   deployer.deploy(ERC20Factory);
+  let diamondCuts = [];
+  for (let i = 0; i < 2; i++) {
+    deployer.deploy(DiamondCutFacet);
+    deployer.deploy(DiamondLoupeFacet);
+    deployer.deploy(CallFacet);
+    deployer.deploy(ERC20Facet);
+    deployer.deploy(BasketFacet);
+    deployer.deploy(OwnershipFacet).then(() => {
+      const diamondCut = [
+        [
+          DiamondCutFacet.address,
+          FacetCutAction.Add,
+          getSelectors(DiamondCutFacet),
+        ],
+        [
+          DiamondLoupeFacet.address,
+          FacetCutAction.Add,
+          getSelectors(DiamondLoupeFacet),
+        ],
+        [
+          OwnershipFacet.address,
+          FacetCutAction.Add,
+          getSelectors(OwnershipFacet),
+        ],
+        [CallFacet.address, FacetCutAction.Add, getSelectors(CallFacet)],
+        [ERC20Facet.address, FacetCutAction.Add, getSelectors(ERC20Facet)],
+        [BasketFacet.address, FacetCutAction.Add, getSelectors(BasketFacet)],
+      ];
+      diamondCuts.push(diamondCut);
+    });
 
-  deployer.deploy(DiamondCutFacet);
-  deployer.deploy(DiamondLoupeFacet);
-  deployer.deploy(CallFacet);
-  deployer.deploy(ERC20Facet);
-  deployer.deploy(BasketFacet);
-  deployer.deploy(OwnershipFacet).then(() => {
-    const diamondCut = [
-      [
-        DiamondCutFacet.address,
-        FacetCutAction.Add,
-        getSelectors(DiamondCutFacet),
-      ],
-      [
-        DiamondLoupeFacet.address,
-        FacetCutAction.Add,
-        getSelectors(DiamondLoupeFacet),
-      ],
-      [
-        OwnershipFacet.address,
-        FacetCutAction.Add,
-        getSelectors(OwnershipFacet),
-      ],
-      [CallFacet.address, FacetCutAction.Add, getSelectors(CallFacet)],
-      [ERC20Facet.address, FacetCutAction.Add, getSelectors(ERC20Facet)],
-      [BasketFacet.address, FacetCutAction.Add, getSelectors(BasketFacet)],
-    ];
-    return deployer.deploy(Diamond, accounts[0], diamondCut);
-  });
+    await deployer.deploy(DiamondFactory);
+    dm = await DiamondFactory.deployed();
+    await dm.deployNewDiamond(accounts[0], diamondCuts);
+  }
 };

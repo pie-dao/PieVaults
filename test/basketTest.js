@@ -16,9 +16,9 @@ const ERC20 = artifacts.require("ERC20");
 contract("BasketFacetTest", async (accounts) => {
   let tokens = [];
   let dm = [];
+  let erc20Factory;
 
   const waitNBlocks = async (n) => {
-    //const sendAsync = promisify(web3.currentProvider.sendAsync);
     await Promise.all(
       [...Array(n).keys()].map((i) =>
         web3.currentProvider.send(
@@ -42,7 +42,8 @@ contract("BasketFacetTest", async (accounts) => {
       toBlock: "latest",
     });
 
-    for (let i = 0; i < events.length; i++) {
+    // initalize diamond 0,1,2
+    for (let i = 0; i <= 2; i++) {
       const diamond = events[i].returnValues.tokenAddress;
       dm.push({
         address: diamond,
@@ -57,7 +58,6 @@ contract("BasketFacetTest", async (accounts) => {
     }
 
     erc20Factory = await ERC20Factory.deployed();
-    tokens = [];
     for (let i = 0; i < 3; i++) {
       token = await erc20Factory.deployNewToken(
         "TEST ${i}",
@@ -86,14 +86,14 @@ contract("BasketFacetTest", async (accounts) => {
       maxCap = await dm[0].basketFacet.methods.getMaxCap().call();
       expect(maxCap).to.be.eq("0");
     });
-    it("Test setlock not allowed", async () => {
+    it("Test setMaxCap not allowed", async () => {
       await expect(
         dm[0].basketFacet.methods
           .setMaxCap(parseEther("1000"))
           .send({ from: accounts[1], gas: 1000000 })
       ).to.be.revertedWith("NOT_ALLOWED");
     });
-    it("Set lock", async () => {
+    it("Set max cap", async () => {
       await dm[0].basketFacet.methods
         .setMaxCap(parseEther("100"))
         .send({ from: accounts[0], gas: 1000000 });
@@ -171,45 +171,170 @@ contract("BasketFacetTest", async (accounts) => {
       ).to.be.revertedWith("MAX_POOL_CAP_REACHED");
     });
     it("Not enough token balance", async () => {
+      await dm[1].erc20Facet.methods
+        .initialize(parseEther("10"), "TEST 1", "TST1", 18)
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
       await expect(
-        dm[0].basketFacet.methods
+        dm[1].basketFacet.methods
           .initialize([tokens[0].options.address], parseEther("1000"))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
       ).to.be.revertedWith("TOKEN_BALANCE_TOO_LOW");
     });
     it("Not owner", async () => {
       await expect(
-        dm[0].basketFacet.methods
+        dm[1].basketFacet.methods
           .initialize([], parseEther("1000"))
           .send({ from: accounts[1], gas: 1000000 })
       ).to.be.revertedWith("Must own the contract.");
     });
     it("Initialize successful", async () => {
       // set lock
-      await dm[0].basketFacet.methods
+      await dm[2].basketFacet.methods
         .setLock(0)
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
 
       addresses = [];
       for (var i = 0; i < tokens.length; i++) {
         await tokens[i].methods
-          .transfer(dm[0].address, parseEther("100"))
+          .transfer(dm[2].address, parseEther("100"))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 });
         addresses.push(tokens[i].options.address);
       }
 
-      lock = await dm[0].basketFacet.methods.getLock().call();
+      await dm[2].erc20Facet.methods
+        .initialize(parseEther("10"), "TEST 1", "TST1", 18)
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      lock = await dm[2].basketFacet.methods.getLock().call();
       assert.equal(lock, true);
 
       // finaly initialize pool
-      await dm[0].basketFacet.methods
+      await dm[2].basketFacet.methods
         .initialize(addresses, parseEther("50000"))
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
 
-      lock = await dm[0].basketFacet.methods.getLock().call();
+      lock = await dm[2].basketFacet.methods.getLock().call();
       assert.equal(lock, false);
     });
   });
+});
+
+contract("BasketFacetTestUse", async (accounts) => {
+  let tokens = [];
+  let dm = [];
+  let erc20Factory;
+
+  before(async () => {
+    web3.eth.defaultAccount = accounts[0];
+    diamondFactory = await DiamondFactory.deployed();
+    events = await diamondFactory.getPastEvents("DiamondCreated", {
+      fromBlock: 0,
+      toBlock: "latest",
+    });
+    erc20Factory = await ERC20Factory.deployed();
+
+    // Initial pool equity
+    //    web3.eth.defaultAccount: 10
+    // Initial pool token balances (every token)
+    //    web3.eth.defaultAccount: 900
+    //    account[2]: 1000
+    //    diamond: 100
+    // initialize diamond 3, 4, 5, 6, 7, 8
+    for (let i = 3; i <= 8; i++) {
+      const diamond = events[i].returnValues.tokenAddress;
+      tokens = [];
+      addresses = [];
+
+      // initialize tokens
+      for (let i = 0; i < 3; i++) {
+        token = await erc20Factory.deployNewToken(
+          "TEST ${i}",
+          "TST${i}",
+          parseEther("2000"),
+          web3.eth.defaultAccount
+        );
+        address = token.receipt.rawLogs[0].address;
+
+        token = new web3.eth.Contract(ERC20.abi, address);
+        await token.methods.transfer(accounts[2], parseEther("1000")).send({
+          from: web3.eth.defaultAccount,
+          gas: 1000000,
+        });
+        await token.methods
+          .transfer(diamond, parseEther("100"))
+          .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+        await token.methods
+          .approve(diamond, parseEther("100000000"))
+          .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+        await token.methods
+          .approve(diamond, parseEther("100000000"))
+          .send({ from: accounts[2], gas: 1000000 });
+
+        tokens.push(token);
+        addresses.push(token.options.address);
+      }
+      const erc20Facet = new web3.eth.Contract(ERC20Facet.abi, diamond);
+      await erc20Facet.methods
+        .initialize(parseEther("10"), "TEST 1", "TST1", 18)
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      // finaly initialize pool
+      const basketFacet = new web3.eth.Contract(BasketFacet.abi, diamond);
+      await basketFacet.methods
+        .initialize(addresses, parseEther("50000"))
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      dm.push({
+        address: diamond,
+        diamondCutFacet: new web3.eth.Contract(DiamondCutFacet.abi, diamond),
+        diamondLoupeFacet: new web3.eth.Contract(
+          DiamondLoupeFacet.abi,
+          diamond
+        ),
+        basketFacet: basketFacet,
+        erc20Facet: erc20Facet,
+        tokens: tokens,
+      });
+    }
+  });
+
+  async function validateInitialBalance(diamond) {
+    for (var i = 0; i < diamond.tokens.length; i++) {
+      balanceDiamond = await diamond.tokens[i].methods
+        .balanceOf(diamond.address)
+        .call();
+      expect(balanceDiamond).to.eq(parseEther("100"));
+
+      // validate internal balance call
+      balanceDiamondInternal = await diamond.basketFacet.methods
+        .balance(diamond.tokens[i].options.address)
+        .call();
+      expect(balanceDiamondInternal).to.eq(balanceDiamond);
+
+      balanceUser = await diamond.tokens[i].methods
+        .balanceOf(web3.eth.defaultAccount)
+        .call();
+      expect(balanceUser).to.eq(parseEther("900"));
+
+      balanceUser2 = await diamond.tokens[i].methods
+        .balanceOf(accounts[2])
+        .call();
+      expect(balanceUser2).to.eq(parseEther("1000"));
+
+      totalSupply = await diamond.tokens[i].methods.totalSupply().call();
+      expect(totalSupply).to.eq(parseEther("2000"));
+    }
+
+    tokensUser = await diamond.erc20Facet.methods
+      .balanceOf(web3.eth.defaultAccount)
+      .call();
+    expect(tokensUser).to.eq(parseEther("10"));
+
+    totalSupply = await diamond.erc20Facet.methods.totalSupply().call();
+    expect(totalSupply).to.eq(parseEther("10"));
+  }
 
   describe("Joining and exiting", async () => {
     // transfer initial token liquidity
@@ -234,139 +359,152 @@ contract("BasketFacetTest", async (accounts) => {
           .exitPool(parseEther("1"))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
       ).to.be.revertedWith("POOL_LOCKED");
-
-      // skip for oncoming tests
-      await waitNBlocks(5);
     });
     it("Join pool", async () => {
-      for (var i = 0; i < tokens.length; i++) {
-        balanceDiamond = await tokens[i].methods
-          .balanceOf(dm[0].address)
-          .call();
-        expect(balanceDiamond).to.eq(parseEther("100"));
+      await validateInitialBalance(dm[1]);
 
-        // validate internal balance call
-        balanceDiamondInternal = await dm[0].basketFacet.methods
-          .balance(tokens[i].options.address)
-          .call();
-        expect(balanceDiamondInternal).to.eq(balanceDiamond);
-
-        balanceUser = await tokens[i].methods
-          .balanceOf(web3.eth.defaultAccount)
-          .call();
-        expect(balanceUser).to.eq(parseEther("900"));
-      }
-      // if this line fail, please run the initialize tests
-      tokensUser = await dm[0].erc20Facet.methods
-        .balanceOf(web3.eth.defaultAccount)
-        .call();
-      expect(tokensUser).to.eq(parseEther("10"));
-
-      await dm[0].basketFacet.methods
+      await dm[1].basketFacet.methods
         .joinPool(parseEther("10"))
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
 
-      for (var i = 0; i < tokens.length; i++) {
-        balanceDiamond = await tokens[i].methods
-          .balanceOf(dm[0].address)
+      for (var i = 0; i < dm[1].tokens.length; i++) {
+        balanceDiamond = await dm[1].tokens[i].methods
+          .balanceOf(dm[1].address)
           .call();
         expect(balanceDiamond).to.eq(parseEther("200"));
 
-        balanceUser = await tokens[i].methods
+        balanceUser = await dm[1].tokens[i].methods
           .balanceOf(web3.eth.defaultAccount)
           .call();
         expect(balanceUser).to.eq(parseEther("800"));
       }
-      tokensUser = await dm[0].erc20Facet.methods
+      tokensUser = await dm[1].erc20Facet.methods
         .balanceOf(web3.eth.defaultAccount)
         .call();
       expect(tokensUser).to.eq(parseEther("20"));
+
+      totalSupply = await dm[1].erc20Facet.methods.totalSupply().call();
+      expect(totalSupply).to.eq(parseEther("20"));
     });
     it("Exit pool", async () => {
-      await dm[0].basketFacet.methods
+      await validateInitialBalance(dm[2]);
+
+      await dm[2].basketFacet.methods
         .exitPool(parseEther("5"))
         .send({ from: web3.eth.defaultAccount, gas: 1000000 });
-      for (var i = 0; i < tokens.length; i++) {
-        balanceDiamond = await tokens[i].methods
-          .balanceOf(dm[0].address)
-          .call();
-        expect(balanceDiamond).to.eq(parseEther("150"));
 
-        balanceUser = await tokens[i].methods
+      for (var i = 0; i < dm[2].tokens.length; i++) {
+        balanceDiamond = await dm[2].tokens[i].methods
+          .balanceOf(dm[2].address)
+          .call();
+        expect(balanceDiamond).to.eq(parseEther("50"));
+
+        balanceUser = await dm[2].tokens[i].methods
           .balanceOf(web3.eth.defaultAccount)
           .call();
-        expect(balanceUser).to.eq(parseEther("850"));
+        expect(balanceUser).to.eq(parseEther("950"));
       }
-      tokensUser = await dm[0].erc20Facet.methods
+      tokensUser = await dm[2].erc20Facet.methods
         .balanceOf(web3.eth.defaultAccount)
         .call();
-      expect(tokensUser).to.eq(parseEther("15"));
+      expect(tokensUser).to.eq(parseEther("5"));
+
+      totalSupply = await dm[2].erc20Facet.methods.totalSupply().call();
+      expect(totalSupply).to.eq(parseEther("5"));
     });
     it("Join fails if it exceeds balance", async () => {
+      await validateInitialBalance(dm[3]);
+
       await expect(
-        dm[0].basketFacet.methods
+        dm[3].basketFacet.methods
           .joinPool(parseEther("10000"))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
       ).to.be.revertedWith("transfer amount exceeds balance");
     });
     it("Exit fails if it exceeds MIN_AMOUNT", async () => {
-      tokensUser = await dm[0].erc20Facet.methods
+      await validateInitialBalance(dm[3]);
+
+      tokensUser = await dm[3].erc20Facet.methods
         .balanceOf(web3.eth.defaultAccount)
         .call();
-      expect(tokensUser).to.eq(parseEther("15"));
+      expect(tokensUser).to.eq(parseEther("10"));
 
       await expect(
-        dm[0].basketFacet.methods
-          .exitPool(parseEther("15").sub(1))
+        dm[3].basketFacet.methods
+          .exitPool(parseEther("10").sub(1))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
       ).to.be.revertedWith("TOKEN_BALANCE_TOO_LOW");
     });
-    it("Join pool with another account", async () => {
-      poolTotal = await dm[0].erc20Facet.methods.totalSupply().call();
-      expect(poolTotal).to.eq(parseEther("15"));
+    it("Join pool with two accounts", async () => {
+      await validateInitialBalance(dm[3]);
 
-      await dm[0].basketFacet.methods
-        .joinPool(parseEther("15"))
+      await dm[3].basketFacet.methods
+        .joinPool(parseEther("10"))
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      await dm[3].basketFacet.methods
+        .joinPool(parseEther("10"))
         .send({ from: accounts[2], gas: 1000000 });
 
-      for (var i = 0; i < tokens.length; i++) {
-        balanceDiamond = await tokens[i].methods
-          .balanceOf(dm[0].address)
+      tokensUser = await dm[3].erc20Facet.methods
+        .balanceOf(web3.eth.defaultAccount)
+        .call();
+      expect(tokensUser).to.eq(parseEther("20"));
+      tokensUser2 = await dm[3].erc20Facet.methods
+        .balanceOf(accounts[2])
+        .call();
+      expect(tokensUser2).to.eq(parseEther("10"));
+
+      poolTotal = await dm[3].erc20Facet.methods.totalSupply().call();
+      expect(poolTotal).to.eq(parseEther("30"));
+      for (var i = 0; i < dm[3].tokens.length; i++) {
+        balanceDiamond = await dm[3].tokens[i].methods
+          .balanceOf(dm[3].address)
           .call();
         expect(balanceDiamond).to.eq(parseEther("300"));
 
-        balanceUser = await tokens[i].methods.balanceOf(accounts[2]).call();
-        expect(balanceUser).to.eq(parseEther("850"));
+        balanceUser = await dm[3].tokens[i].methods
+          .balanceOf(web3.eth.defaultAccount)
+          .call();
+        expect(balanceUser).to.eq(parseEther("800"));
+
+        balanceUser2 = await dm[3].tokens[i].methods
+          .balanceOf(accounts[2])
+          .call();
+        expect(balanceUser2).to.eq(parseEther("900"));
       }
-      tokensUser = await dm[0].erc20Facet.methods.balanceOf(accounts[2]).call();
-      expect(tokensUser).to.eq(parseEther("15"));
     });
     it("Exit fails if it exceeds balance of user", async () => {
-      poolTotal = await dm[0].erc20Facet.methods.totalSupply().call();
-      expect(poolTotal).to.eq(parseEther("30"));
+      await validateInitialBalance(dm[4]);
+
+      await dm[4].basketFacet.methods
+        .joinPool(parseEther("10"))
+        .send({ from: accounts[2], gas: 1000000 });
+
+      poolTotal = await dm[4].erc20Facet.methods.totalSupply().call();
+      expect(poolTotal).to.eq(parseEther("20"));
+
+      tokensUser = await dm[4].erc20Facet.methods
+        .balanceOf(web3.eth.defaultAccount)
+        .call();
+      expect(tokensUser).to.eq(parseEther("10"));
 
       await expect(
-        dm[0].basketFacet.methods
-          .exitPool(parseEther("20"))
+        dm[4].basketFacet.methods
+          .exitPool(parseEther("15"))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
       ).to.be.revertedWith("subtraction overflow");
     });
     it("Join fails if it exceeds max cap", async () => {
-      poolTotal = await dm[0].erc20Facet.methods.totalSupply().call();
-      expect(poolTotal).to.eq(parseEther("30"));
+      await validateInitialBalance(dm[5]);
 
-      tokensUser = await dm[0].erc20Facet.methods
-        .balanceOf(web3.eth.defaultAccount)
-        .call();
-      expect(tokensUser).to.eq(parseEther("15"));
-
-      await dm[0].basketFacet.methods
-        .setMaxCap(parseEther("35"))
+      await dm[5].basketFacet.methods
+        .setMaxCap(parseEther("15"))
         .send({ from: accounts[0], gas: 1000000 });
 
       await expect(
-        dm[0].basketFacet.methods
-          .joinPool(parseEther("10"))
+        dm[5].basketFacet.methods
+          .joinPool(parseEther("8"))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
       ).to.be.revertedWith("MAX_POOL_CAP_REACHED");
     });

@@ -10,7 +10,7 @@ const DiamondCutFacet = artifacts.require("DiamondCutFacet");
 const DiamondLoupeFacet = artifacts.require("DiamondLoupeFacet");
 const ERC20Facet = artifacts.require("ERC20Facet");
 const zeroAddress = "0x0000000000000000000000000000000000000000";
-// initalize diamond 14, 15, 16, 17, 18, 19
+// initalize diamond 17, 18, 19, 20, 21, 22
 // 16+ with initial balance of 20
 contract("ERC20Test", async (accounts) => {
   let dm = [];
@@ -23,10 +23,10 @@ contract("ERC20Test", async (accounts) => {
       toBlock: "latest",
     });
 
-    for (let i = 14; i <= 19; i++) {
+    for (let i = 17; i <= 22; i++) {
       const diamond = events[i].returnValues.tokenAddress;
       let erc20Facet = new web3.eth.Contract(ERC20Facet.abi, diamond);
-      if (i >= 16) {
+      if (i >= 19) {
         await erc20Facet.methods
           .initialize(parseEther("20"), "TEST 2", "TST2", 18)
           .send({ from: accounts[0], gas: 1000000 });

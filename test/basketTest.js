@@ -13,7 +13,7 @@ const ERC20Facet = artifacts.require("ERC20Facet");
 const ERC20Factory = artifacts.require("ERC20Factory");
 const ERC20 = artifacts.require("ERC20");
 
-// initalize diamond 0,1,2
+// initalize diamond 0,1,2,3,4
 contract("BasketFacetTest", async (accounts) => {
   let tokens = [];
   let dm = [];
@@ -43,7 +43,7 @@ contract("BasketFacetTest", async (accounts) => {
       toBlock: "latest",
     });
 
-    for (let i = 0; i <= 2; i++) {
+    for (let i = 0; i <= 4; i++) {
       const diamond = events[i].returnValues.tokenAddress;
       dm.push({
         address: diamond,
@@ -220,7 +220,7 @@ contract("BasketFacetTest", async (accounts) => {
   });
 });
 
-// initialize diamond 3, 4, 5, 6, 7, 8
+// initialize diamond 5, 6, 7, 8, 9, 10, 11
 contract("BasketFacetTestUse", async (accounts) => {
   let tokens = [];
   let dm = [];
@@ -241,7 +241,7 @@ contract("BasketFacetTestUse", async (accounts) => {
     //    web3.eth.defaultAccount: 900
     //    account[2]: 1000
     //    diamond: 100
-    for (let i = 3; i <= 8; i++) {
+    for (let i = 5; i <= 11; i++) {
       const diamond = events[i].returnValues.tokenAddress;
       tokens = [];
       addresses = [];

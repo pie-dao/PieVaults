@@ -13,7 +13,7 @@ const BasketFacet = artifacts.require("BasketFacet");
 const CallFacet = artifacts.require("CallFacet");
 const ERC20Factory = artifacts.require("ERC20Factory");
 const ERC20 = artifacts.require("ERC20");
-// initalize diamond 9, 10, 11, 12, 13
+// initalize diamond 12, 13, 14, 15, 16
 contract("CallFacetTest", async (accounts) => {
   let erc20Factory;
   let dm = [];
@@ -26,7 +26,7 @@ contract("CallFacetTest", async (accounts) => {
       toBlock: "latest",
     });
 
-    for (let i = 9; i <= 13; i++) {
+    for (let i = 12; i <= 16; i++) {
       const diamond = events[i].returnValues.tokenAddress;
       dm.push({
         address: diamond,

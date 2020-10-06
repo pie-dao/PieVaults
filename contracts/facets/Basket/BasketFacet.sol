@@ -23,6 +23,11 @@ contract BasketFacet is ReentryProtectionFacet {
         require(es.totalSupply >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");
         require(es.totalSupply <= _maxCap, "MAX_POOL_CAP_REACHED");
 
+        for (uint256 i = 0; i < bs.tokens.length; i ++){
+            bs.inPool[address(bs.tokens[i])] = false;
+        }
+        delete bs.tokens;
+
         for (uint256 i = 0; i < _tokens.length; i ++) {
             bs.tokens.push(IERC20(_tokens[i]));
             bs.inPool[_tokens[i]] = true;

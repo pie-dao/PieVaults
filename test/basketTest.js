@@ -217,6 +217,35 @@ contract("BasketFacetTest", async (accounts) => {
       lock = await dm[2].basketFacet.methods.getLock().call();
       assert.equal(lock, false);
     });
+    it("Initialize twice successful", async () => {
+      addresses = [];
+      for (var i = 0; i < tokens.length; i++) {
+        await tokens[i].methods
+          .transfer(dm[2].address, parseEther("100"))
+          .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+        addresses.push(tokens[i].options.address);
+      }
+
+      await dm[2].erc20Facet.methods
+        .initialize(parseEther("10"), "TEST 1", "TST1", 18)
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      // finaly initialize pool
+      await dm[2].basketFacet.methods
+        .initialize(addresses.slice(0, 1), parseEther("50000"))
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      lock = await dm[2].basketFacet.methods.getLock().call();
+      assert.equal(lock, false);
+
+      // finaly initialize pool
+      await dm[2].basketFacet.methods
+        .initialize(addresses.slice(1, address.length), parseEther("50000"))
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      lock = await dm[2].basketFacet.methods.getLock().call();
+      assert.equal(lock, false);
+    });
   });
 });
 
@@ -507,6 +536,72 @@ contract("BasketFacetTestUse", async (accounts) => {
           .joinPool(parseEther("8"))
           .send({ from: web3.eth.defaultAccount, gas: 1000000 })
       ).to.be.revertedWith("MAX_POOL_CAP_REACHED");
+    });
+    it("Join pool with reinitialize of pool", async () => {
+      await validateInitialBalance(dm[6]);
+
+      await dm[6].basketFacet.methods
+        .joinPool(parseEther("10"))
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      for (var i = 0; i < dm[6].tokens.length; i++) {
+        balanceDiamond = await dm[6].tokens[i].methods
+          .balanceOf(dm[6].address)
+          .call();
+        expect(balanceDiamond).to.eq(parseEther("200"));
+
+        balanceUser = await dm[6].tokens[i].methods
+          .balanceOf(web3.eth.defaultAccount)
+          .call();
+        expect(balanceUser).to.eq(parseEther("800"));
+      }
+      tokensUser = await dm[6].erc20Facet.methods
+        .balanceOf(web3.eth.defaultAccount)
+        .call();
+      expect(tokensUser).to.eq(parseEther("20"));
+
+      totalSupply = await dm[6].erc20Facet.methods.totalSupply().call();
+      expect(totalSupply).to.eq(parseEther("20"));
+
+      //only add first token, basically remove token 2,3
+      await dm[6].basketFacet.methods
+        .initialize(addresses.slice(0, 1), parseEther("50000"))
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      await dm[6].basketFacet.methods
+        .joinPool(parseEther("10"))
+        .send({ from: web3.eth.defaultAccount, gas: 1000000 });
+
+      // balance of first token is changed
+      balanceDiamond = await dm[6].tokens[0].methods
+        .balanceOf(dm[6].address)
+        .call();
+      expect(balanceDiamond).to.eq(parseEther("300"));
+
+      balanceUser = await dm[6].tokens[0].methods
+        .balanceOf(web3.eth.defaultAccount)
+        .call();
+      expect(balanceUser).to.eq(parseEther("700"));
+
+      // verify balance of token 2,3
+      for (var i = 1; i < dm[6].tokens.length; i++) {
+        balanceDiamond = await dm[6].tokens[i].methods
+          .balanceOf(dm[6].address)
+          .call();
+        expect(balanceDiamond).to.eq(parseEther("200"));
+
+        balanceUser = await dm[6].tokens[i].methods
+          .balanceOf(web3.eth.defaultAccount)
+          .call();
+        expect(balanceUser).to.eq(parseEther("800"));
+      }
+      tokensUser = await dm[6].erc20Facet.methods
+        .balanceOf(web3.eth.defaultAccount)
+        .call();
+      expect(tokensUser).to.eq(parseEther("30"));
+
+      totalSupply = await dm[6].erc20Facet.methods.totalSupply().call();
+      expect(totalSupply).to.eq(parseEther("30"));
     });
   });
 });

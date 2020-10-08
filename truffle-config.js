@@ -1,3 +1,7 @@
+require("dotenv").config();
+
+const HDWalletProvider = require("@truffle/hdwallet-provider");
+
 /**
  * Use this file to configure your truffle project. It's seeded with some
  * common settings for different networks and features like migrations,
@@ -23,7 +27,6 @@
 //
 // const fs = require('fs');
 // const mnemonic = fs.readFileSync(".secret").toString().trim();
-
 module.exports = {
     /**
      * Networks define how you connect to your ethereum client and let you set the
@@ -46,6 +49,24 @@ module.exports = {
         host: '127.0.0.1', // Localhost (default: none)
         port: 8545, // Standard Ethereum port (default: none)
         network_id: '*' // Any network (default: none)
+      },
+      mainnet: {
+        port: 8545,
+        network_id: '1',
+        provider: new HDWalletProvider(process.env.PRIVATE_KEY, "https://mainnet.infura.io/v3/ffa6c1dc83e44e6c9971d4706311d5ab"),
+        gasPrice: 100000000000
+      },
+      goerli: {
+        port: 8545,
+        network_id: '*',
+        provider: new HDWalletProvider(process.env.PRIVATE_KEY, "https://goerli.infura.io/v3/ffa6c1dc83e44e6c9971d4706311d5ab"),
+        gasPrice: 100000000000
+      },
+      frame: {
+        url: "http://localhost",
+        port: 1248,
+        network_id: '1',
+        gasPrice: 100000000000
       }
 
       // Another network with more advanced options...

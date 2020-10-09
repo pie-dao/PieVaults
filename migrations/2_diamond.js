@@ -27,16 +27,16 @@ function getSelectors(contract) {
 }
 
 module.exports = async (deployer, network, accounts) => {
-  deployer.deploy(ERC20Factory);
-  await deployer.deploy(DiamondFactory);
+  await deployer.deploy(ERC20Factory, { gas: 6721975 });
+  await deployer.deploy(DiamondFactory, { gas: 6721975 });
   dm = await DiamondFactory.deployed();
   for (let i = 0; i < 1; i++) {
-    await deployer.deploy(DiamondCutFacet);
-    await deployer.deploy(DiamondLoupeFacet);
-    await deployer.deploy(CallFacet);
-    await deployer.deploy(ERC20Facet);
-    await deployer.deploy(BasketFacet);
-    await deployer.deploy(OwnershipFacet);
+    await deployer.deploy(DiamondCutFacet, { gas: 6721975 });
+    await deployer.deploy(DiamondLoupeFacet, { gas: 6721975 });
+    await deployer.deploy(CallFacet, { gas: 6721975 });
+    await deployer.deploy(ERC20Facet, { gas: 6721975 });
+    await deployer.deploy(BasketFacet, { gas: 6721975 });
+    await deployer.deploy(OwnershipFacet, { gas: 6721975 });
     const diamondCut = [
       [
         DiamondCutFacet.address,
@@ -57,6 +57,6 @@ module.exports = async (deployer, network, accounts) => {
       [ERC20Facet.address, FacetCutAction.Add, getSelectors(ERC20Facet)],
       [BasketFacet.address, FacetCutAction.Add, getSelectors(BasketFacet)],
     ];
-    await dm.deployNewDiamond(accounts[0], diamondCut);
+    await dm.deployNewDiamond(accounts[0], diamondCut, { gas: 6721975 });
   }
 };

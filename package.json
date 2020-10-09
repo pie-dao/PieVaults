@@ -16,6 +16,7 @@
     "ethereum-waffle": "^3.1.0",
     "ethers": "^5.0.14",
     "truffle": "^5.1.44",
+    "truffle-plugin-verify": "^0.4.0",
     "truffle-privatekey-provider": "^1.5.0"
   },
   "devDependencies": {

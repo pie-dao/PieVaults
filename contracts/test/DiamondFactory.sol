@@ -5,11 +5,13 @@ pragma experimental ABIEncoderV2;
 import "../diamond-3/contracts/Diamond.sol";
 
 contract DiamondFactory {
-    event DiamondCreated(address tokenAddress);
+  event DiamondCreated(address tokenAddress);
 
-    function deployNewDiamond(address _owner, IDiamondCut.FacetCut[] memory diamondCut)
-    public returns (address) {
-        Diamond d = new Diamond(_owner, diamondCut);
-        emit DiamondCreated(address(d));
-    }
+  function deployNewDiamond(
+    address _owner,
+    IDiamondCut.FacetCut[] memory diamondCut
+  ) public returns (address) {
+    Diamond d = new Diamond(diamondCut, _owner);
+    emit DiamondCreated(address(d));
+  }
 }

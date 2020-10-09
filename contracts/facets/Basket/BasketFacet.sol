@@ -5,7 +5,7 @@ import "../../openzeppelin/math/SafeMath.sol";
 import "../ERC20/LibERC20Storage.sol";
 import "../ERC20/LibERC20.sol";
 import "./LibBasketStorage.sol";
-import "../../diamond-3/contracts/libraries/LibDiamondStorage.sol";
+import "../../diamond-3/contracts/libraries/LibDiamond.sol";
 import "../Reentry/ReentryProtectionFacet.sol";
 
 contract BasketFacet is ReentryProtectionFacet {
@@ -15,7 +15,7 @@ contract BasketFacet is ReentryProtectionFacet {
 
     // Before calling the first joinPool, the pools needs to be initialized with token balances
     function initialize(address[] memory _tokens, uint256 _maxCap) external noReentry {
-        LibDiamondStorage.DiamondStorage storage ds = LibDiamondStorage.diamondStorage();
+        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
@@ -84,7 +84,7 @@ contract BasketFacet is ReentryProtectionFacet {
     function setLock(uint256 _lock) external {
         // Maybe remove the first check
         require(
-            msg.sender == LibDiamondStorage.diamondStorage().contractOwner ||
+            msg.sender == LibDiamond.diamondStorage().contractOwner ||
             msg.sender == address(this), "NOT_ALLOWED"
         );
         LibBasketStorage.basketStorage().lockBlock = _lock;
@@ -96,7 +96,7 @@ contract BasketFacet is ReentryProtectionFacet {
 
     function setMaxCap(uint256 _maxCap) external returns(uint256){
         require(
-            msg.sender == LibDiamondStorage.diamondStorage().contractOwner ||
+            msg.sender == LibDiamond.diamondStorage().contractOwner ||
             msg.sender == address(this), "NOT_ALLOWED"
         );
         LibBasketStorage.basketStorage().maxCap = _maxCap;

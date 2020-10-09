@@ -3,13 +3,19 @@ pragma solidity ^0.7.1;
 
 import "./LibReentryProtectionStorage.sol";
 
-contract ReentryProtectionFacet  {
+contract ReentryProtectionFacet {
   modifier noReentry {
     // Use counter to only write to storage once
-    LibReentryProtectionStorage.RPStorage storage s = LibReentryProtectionStorage.rpStorage();
+
+
+      LibReentryProtectionStorage.RPStorage storage s
+     = LibReentryProtectionStorage.rpStorage();
     s.lockCounter++;
     uint256 lockValue = s.lockCounter;
     _;
-    require(lockValue == s.lockCounter, "ReentryProtectionFacet.noReentry: reentry detected");
+    require(
+      lockValue == s.lockCounter,
+      "ReentryProtectionFacet.noReentry: reentry detected"
+    );
   }
 }

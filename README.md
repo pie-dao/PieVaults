@@ -7,7 +7,7 @@ There are basically two motivations, governance participation and yield farming.
 
 In the current DeFi space there are lot’s of opportunities to participate in governance of various protocols. The ExperiPie uses a very flexible CallFacet which makes it possible to execute any call on behalf of the pool. The ExperiPie will be used to participate in governance protocols to benefit PieDao participants.
 
-Yield farm opportunities can show up any time, not everyone has the liquidity or attention to fulfill every opportunity. Using the ExperiPie everyone can pool their tokens. Through the flexible nature of the pool it is possible use active governance to take any yield farm opportunity.
+Yield farm opportunities can show up any time, not everyone has the liquidity or attention to fulfill every opportunity. Using the ExperiPie everyone can pool their tokens. Through the flexible nature of the pool it is possible to use active governance to take any yield farm opportunity.
 
 See the [forum post](https://forum.piedao.org/t/pool-experipie/210) for more information.
 

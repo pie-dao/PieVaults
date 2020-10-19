@@ -9,9 +9,9 @@ contract DiamondFactory {
 
   function deployNewDiamond(
     address _owner,
-    IDiamondCut.FacetCut[] memory diamondCut
+    IDiamondCut.FacetCut[] memory _diamondCut
   ) public returns (address) {
-    Diamond d = new Diamond(diamondCut, _owner);
+    Diamond d = new Diamond(_diamondCut, _owner);
     emit DiamondCreated(address(d));
   }
 }

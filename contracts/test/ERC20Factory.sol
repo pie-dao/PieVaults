@@ -5,11 +5,11 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract TestToken is ERC20 {
 
-  constructor(string memory name, string memory symbol) ERC20(name, symbol){
-    
+  constructor(string memory _name, string memory _symbol) ERC20(_name, _symbol){
+
   }
-  function mint(uint256 amount, address issuer) external {
-    _mint(issuer, amount);
+  function mint(uint256 _amount, address _issuer) external {
+    _mint(_issuer, _amount);
   }
 }
 
@@ -17,13 +17,13 @@ contract ERC20Factory {
   event TokenCreated(address tokenAddress);
 
   function deployNewToken(
-    string memory name,
-    string memory symbol,
-    uint256 totalSupply,
-    address issuer
+    string memory _name,
+    string memory _symbol,
+    uint256 _totalSupply,
+    address _issuer
   ) public returns (address) {
-    TestToken t = new TestToken(name, symbol);
-    t.mint(totalSupply, issuer);
+    TestToken t = new TestToken(_name, _symbol);
+    t.mint(_totalSupply, _issuer);
     emit TokenCreated(address(t));
   }
 }

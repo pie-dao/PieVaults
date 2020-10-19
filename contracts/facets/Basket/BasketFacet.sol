@@ -5,7 +5,7 @@ import "../../openzeppelin/math/SafeMath.sol";
 import "../ERC20/LibERC20Storage.sol";
 import "../ERC20/LibERC20.sol";
 import "./LibBasketStorage.sol";
-import "../../diamond-3/contracts/libraries/LibDiamond.sol";
+import "diamond-3/contracts/libraries/LibDiamond.sol";
 import "../Reentry/ReentryProtectionFacet.sol";
 
 contract BasketFacet is ReentryProtectionFacet {

@@ -2,7 +2,7 @@
 pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.1;
 
-import "../../diamond-3/contracts/libraries/LibDiamond.sol";
+import "diamond-3/contracts/libraries/LibDiamond.sol";
 import "../Reentry/ReentryProtectionFacet.sol";
 
 contract CallFacet is ReentryProtectionFacet {

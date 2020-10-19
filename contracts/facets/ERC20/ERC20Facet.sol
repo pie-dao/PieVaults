@@ -4,7 +4,7 @@ pragma solidity ^0.7.1;
 import "../../openzeppelin/token/ERC20/IERC20.sol";
 import "../../openzeppelin/math/SafeMath.sol";
 
-import "../../diamond-3/contracts/libraries/LibDiamond.sol";
+import "diamond-3/contracts/libraries/LibDiamond.sol";
 
 import "./LibERC20Storage.sol";
 import "./LibERC20.sol";

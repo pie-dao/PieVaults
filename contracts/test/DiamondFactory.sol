@@ -2,7 +2,7 @@
 pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
-import "../diamond-3/contracts/Diamond.sol";
+import "diamond-3/contracts/Diamond.sol";
 
 contract DiamondFactory {
   event DiamondCreated(address tokenAddress);

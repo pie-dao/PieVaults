@@ -12,7 +12,10 @@ contract CallFacet is ReentryProtectionFacet {
     uint256[] memory _values
   ) external noReentry {
     // ONLY THE OWNER CAN DO ARBITRARY CALLS
-    require(msg.sender == LibDiamond.diamondStorage().contractOwner);
+    require(
+      msg.sender == LibDiamond.diamondStorage().contractOwner ||
+      msg.sender == address(this), "NOT_ALLOWED"
+    );
     require(
       _targets.length == _calldata.length && _values.length == _calldata.length,
       "ARRAY_LENGTH_MISMATCH"

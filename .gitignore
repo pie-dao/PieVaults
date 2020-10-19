@@ -4,3 +4,6 @@ build
 contracts/diamond-3
 !contracts/diamond-3/.gitkeep
 .env
+artifacts/
+typechain/
+cache/

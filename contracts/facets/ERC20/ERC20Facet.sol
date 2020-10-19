@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.1;
 
-import "../../openzeppelin/token/ERC20/IERC20.sol";
-import "../../openzeppelin/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 import "diamond-3/contracts/libraries/LibDiamond.sol";
 

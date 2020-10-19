@@ -1,8 +1,7 @@
 /* eslint-disable prefer-const */
 /* global contract artifacts web3 before it assert */
 const { parseEther } = require("ethers/lib/utils");
-const { expect } = require("chai");
-const { use } = require("chai");
+const { expect, use } = require("chai");
 const { solidity } = require("ethereum-waffle");
 use(solidity);
 const DiamondFactory = artifacts.require("DiamondFactory");

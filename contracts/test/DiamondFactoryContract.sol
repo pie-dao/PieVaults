@@ -4,7 +4,7 @@ pragma experimental ABIEncoderV2;
 
 import "diamond-3/contracts/Diamond.sol";
 
-contract DiamondFactory {
+contract DiamondFactoryContract {
   event DiamondCreated(address tokenAddress);
 
   function deployNewDiamond(

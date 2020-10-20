@@ -5,9 +5,9 @@
   "main": "index.js",
   "scripts": {
     "prettier": "prettier --write contracts/**/*.sol",
-    "clean": "rm -rf ./build",
+    "clean": "rm -rf ./build && rm -rf ./typechain",
     "test": "truffle test",
-    "compile": "npx buidler compile --config buidler.config.ts",
+    "compile": "npx buidler compile --config buidler.compile.config.ts",
     "typechain": "typechain --target ethers-v5 --outDir typechain ./artifacts/**/*.json",
     "build": "yarn compile && yarn typechain"
   },

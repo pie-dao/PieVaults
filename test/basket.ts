@@ -305,85 +305,60 @@ describe("BasketFacet", function() {
             experiPie.exitPool(balance.add(1))
           ).to.be.revertedWith("subtraction overflow");
         });
-        // it("Join fails if it exceeds max cap", async () => {
-        //   await validateInitialBalance(dm[5]);
+        it("Join fails if it exceeds max cap", async () => {
+          const totalSupply = await experiPie.totalSupply();
+          const mintAmount = parseEther("10000");
+
+          await experiPie.setMaxCap(totalSupply.add(mintAmount).sub(1))
     
-        //   await dm[5].basketFacet.methods
-        //     .setMaxCap(parseEther("15"))
-        //     .send({ from: accounts[0], gas: 1000000 });
-    
-        //   await expect(
-        //     dm[5].basketFacet.methods
-        //       .joinPool(parseEther("8"))
-        //       .send({ from: web3.eth.defaultAccount, gas: 1000000 })
-        //   ).to.be.revertedWith("MAX_POOL_CAP_REACHED");
-        // });
-        // it("Join pool with reinitialize of pool", async () => {
-        //   await validateInitialBalance(dm[6]);
-    
-        //   await dm[6].basketFacet.methods
-        //     .joinPool(parseEther("10"))
-        //     .send({ from: web3.eth.defaultAccount, gas: 1000000 });
-    
-        //   for (var i = 0; i < dm[6].tokens.length; i++) {
-        //     balanceDiamond = await dm[6].tokens[i].methods
-        //       .balanceOf(dm[6].address)
-        //       .call();
-        //     expect(balanceDiamond).to.eq(parseEther("200"));
-    
-        //     balanceUser = await dm[6].tokens[i].methods
-        //       .balanceOf(web3.eth.defaultAccount)
-        //       .call();
-        //     expect(balanceUser).to.eq(parseEther("800"));
-        //   }
-        //   tokensUser = await dm[6].erc20Facet.methods
-        //     .balanceOf(web3.eth.defaultAccount)
-        //     .call();
-        //   expect(tokensUser).to.eq(parseEther("20"));
-    
-        //   totalSupply = await dm[6].erc20Facet.methods.totalSupply().call();
-        //   expect(totalSupply).to.eq(parseEther("20"));
-    
-        //   //only add first token, basically remove token 2,3
-        //   await dm[6].basketFacet.methods
-        //     .initialize(addresses.slice(0, 1), parseEther("50000"))
-        //     .send({ from: web3.eth.defaultAccount, gas: 1000000 });
-    
-        //   await dm[6].basketFacet.methods
-        //     .joinPool(parseEther("10"))
-        //     .send({ from: web3.eth.defaultAccount, gas: 1000000 });
-    
-        //   // balance of first token is changed
-        //   balanceDiamond = await dm[6].tokens[0].methods
-        //     .balanceOf(dm[6].address)
-        //     .call();
-        //   expect(balanceDiamond).to.eq(parseEther("300"));
-    
-        //   balanceUser = await dm[6].tokens[0].methods
-        //     .balanceOf(web3.eth.defaultAccount)
-        //     .call();
-        //   expect(balanceUser).to.eq(parseEther("700"));
-    
-        //   // verify balance of token 2,3
-        //   for (var i = 1; i < dm[6].tokens.length; i++) {
-        //     balanceDiamond = await dm[6].tokens[i].methods
-        //       .balanceOf(dm[6].address)
-        //       .call();
-        //     expect(balanceDiamond).to.eq(parseEther("200"));
-    
-        //     balanceUser = await dm[6].tokens[i].methods
-        //       .balanceOf(web3.eth.defaultAccount)
-        //       .call();
-        //     expect(balanceUser).to.eq(parseEther("800"));
-        //   }
-        //   tokensUser = await dm[6].erc20Facet.methods
-        //     .balanceOf(web3.eth.defaultAccount)
-        //     .call();
-        //   expect(tokensUser).to.eq(parseEther("30"));
-    
-        //   totalSupply = await dm[6].erc20Facet.methods.totalSupply().call();
-        //   expect(totalSupply).to.eq(parseEther("30"));
-        // });
+          await expect(
+            experiPie.joinPool(mintAmount)
+          ).to.be.revertedWith("MAX_POOL_CAP_REACHED");
+        });
+        it("Adding a token", async() => {
+          const addedToken = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;
+          
+          const tokensBefore = await experiPie.getTokens();
+
+          await addedToken.mint(parseEther("1000000"), account);
+          await addedToken.transfer(experiPie.address, parseEther("1000"));
+          await experiPie.addToken(addedToken.address);
+
+          const tokensAfter = await experiPie.getTokens();
+          const tokenInPool = await experiPie.getTokenInPool(addedToken.address);
+
+          expect(tokensAfter.length).to.eq(tokensBefore.length + 1);
+          expect(tokensAfter[tokensAfter.length - 1]).to.eq(addedToken.address);
+          expect(tokenInPool).to.be.true;
+        });
+        it("Adding token not allowed", async() => {
+          await expect(experiPie.connect(signers[1]).addToken(constants.AddressZero)).to.be.revertedWith("NOT_ALLOWED");
+        });
+        it("Adding a token with less than MIN_AMOUNT should fail", async() => {
+          const addedToken = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;
+          await expect(experiPie.addToken(addedToken.address)).to.be.revertedWith("BALANCE_TOO_SMALL"); 
+        });
+        it("Adding a token which is already in the pool should fail", async() => {
+          await expect(experiPie.addToken(testTokens[0].address)).to.be.revertedWith("TOKEN_ALREADY_IN_POOL");
+        });
+        it("Removing a token", async() => {
+          const tokensBefore = await experiPie.getTokens();
+          await experiPie.removeToken(testTokens[1].address);
+          const tokensAfter = await experiPie.getTokens();
+
+          const inPool = await experiPie.getTokenInPool(testTokens[1].address);
+
+          expect(tokensAfter.length).to.eq(tokensBefore.length - 1);
+          expect(inPool).to.be.false;
+          expect(tokensAfter[0]).to.eq(tokensBefore[0]);
+          expect(tokensAfter[1]).to.eq(tokensBefore[2]);
+        });
+        it("Removing a token not allowed", async() => {
+          await expect(experiPie.connect(signers[1]).removeToken(testTokens[1].address)).to.be.revertedWith("NOT_ALLOWED");
+        });
+        it("Removing a token not in the pool should fail", async() => {
+          await expect(experiPie.removeToken(constants.AddressZero)).to.be.revertedWith("TOKEN_NOT_IN_POOL");
+        });
       });
 
 })

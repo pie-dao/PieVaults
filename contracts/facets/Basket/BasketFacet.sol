@@ -13,36 +13,11 @@ contract BasketFacet is ReentryProtection, CallProtection {
 
     uint256 constant MIN_AMOUNT = 10**6;
 
-    // // Before calling the first joinPool, the pools needs to be initialized with token balances
-    // function initialize(address[] memory _tokens, uint256 _maxCap) external noReentry protectedCall {
-    //     LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
-    //     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
-
-    //     require(es.totalSupply >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");
-    //     require(es.totalSupply <= _maxCap, "MAX_POOL_CAP_REACHED");
-
-    //     for (uint256 i = 0; i < bs.tokens.length; i ++){
-    //         bs.inPool[address(bs.tokens[i])] = false;
-    //     }
-    //     delete bs.tokens;
-
-    //     for (uint256 i = 0; i < _tokens.length; i ++) {
-    //         bs.tokens.push(IERC20(_tokens[i]));
-    //         bs.inPool[_tokens[i]] = true;
-    //         // requires some initial supply, could be less than 1 gwei, but yea.
-    //         require(balance(_tokens[i]) >= MIN_AMOUNT, "TOKEN_BALANCE_TOO_LOW");
-    //     }
-
-    //     // unlock the contract
-    //     this.setMaxCap(_maxCap);
-    //     this.setLock(block.number.sub(1));
-    // }
-
     function addToken(address _token) external protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         require(!bs.inPool[_token], "TOKEN_ALREADY_IN_POOL");
         // Enforce minimum to avoid rounding errors; (Minimum value is the same as in Balancer)
-        require(balance(_token) >= 10**6, "BALANCE_TOO_SMALL");
+        require(balance(_token) >= MIN_AMOUNT, "BALANCE_TOO_SMALL");
 
         bs.inPool[_token] = true;
         bs.tokens.push(IERC20(_token));
@@ -102,9 +77,13 @@ contract BasketFacet is ReentryProtection, CallProtection {
     }
 
     // returns true when locked
-    function getLock() external view returns(bool){
+    function getLock() external view returns(bool) {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         return bs.lockBlock == 0 || bs.lockBlock >= block.number;
+    }
+
+    function getTokenInPool(address _token) external view returns(bool) {
+        return LibBasketStorage.basketStorage().inPool[_token];
     }
 
     function getLockBlock() external view returns(uint256) {

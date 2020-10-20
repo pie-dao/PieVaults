@@ -3,19 +3,15 @@ pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.1;
 
 import "diamond-3/contracts/libraries/LibDiamond.sol";
-import "../Reentry/ReentryProtectionFacet.sol";
+import "../shared/Reentry/ReentryProtection.sol";
+import "../shared/Access/CallProtection.sol";
 
-contract CallFacet is ReentryProtectionFacet {
+contract CallFacet is ReentryProtection, CallProtection {
   function call(
     address[] memory _targets,
     bytes[] memory _calldata,
     uint256[] memory _values
-  ) external noReentry {
-    // ONLY THE OWNER CAN DO ARBITRARY CALLS
-    require(
-      msg.sender == LibDiamond.diamondStorage().contractOwner ||
-      msg.sender == address(this), "NOT_ALLOWED"
-    );
+  ) external noReentry protectedCall {
     require(
       _targets.length == _calldata.length && _values.length == _calldata.length,
       "ARRAY_LENGTH_MISMATCH"

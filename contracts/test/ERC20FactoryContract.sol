@@ -13,7 +13,7 @@ contract TestToken is ERC20 {
   }
 }
 
-contract ERC20Factory {
+contract ERC20FactoryContract {
   event TokenCreated(address tokenAddress);
 
   function deployNewToken(

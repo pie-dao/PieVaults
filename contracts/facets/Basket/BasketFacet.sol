@@ -5,39 +5,66 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 import "../ERC20/LibERC20Storage.sol";
 import "../ERC20/LibERC20.sol";
 import "./LibBasketStorage.sol";
-import "diamond-3/contracts/libraries/LibDiamond.sol";
-import "../Reentry/ReentryProtectionFacet.sol";
+import "../shared/Reentry/ReentryProtection.sol";
+import "../shared/Access/CallProtection.sol";
 
-contract BasketFacet is ReentryProtectionFacet {
+contract BasketFacet is ReentryProtection, CallProtection {
     using SafeMath for uint256;
 
-    uint256 constant MIN_AMOUNT = 1 gwei;
+    uint256 constant MIN_AMOUNT = 10**6;
 
-    // Before calling the first joinPool, the pools needs to be initialized with token balances
-    function initialize(address[] memory _tokens, uint256 _maxCap) external noReentry {
-        LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
+    // // Before calling the first joinPool, the pools needs to be initialized with token balances
+    // function initialize(address[] memory _tokens, uint256 _maxCap) external noReentry protectedCall {
+    //     LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
+    //     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+
+    //     require(es.totalSupply >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");
+    //     require(es.totalSupply <= _maxCap, "MAX_POOL_CAP_REACHED");
+
+    //     for (uint256 i = 0; i < bs.tokens.length; i ++){
+    //         bs.inPool[address(bs.tokens[i])] = false;
+    //     }
+    //     delete bs.tokens;
+
+    //     for (uint256 i = 0; i < _tokens.length; i ++) {
+    //         bs.tokens.push(IERC20(_tokens[i]));
+    //         bs.inPool[_tokens[i]] = true;
+    //         // requires some initial supply, could be less than 1 gwei, but yea.
+    //         require(balance(_tokens[i]) >= MIN_AMOUNT, "TOKEN_BALANCE_TOO_LOW");
+    //     }
+
+    //     // unlock the contract
+    //     this.setMaxCap(_maxCap);
+    //     this.setLock(block.number.sub(1));
+    // }
+
+    function addToken(address _token) external protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
-        LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+        require(!bs.inPool[_token], "TOKEN_ALREADY_IN_POOL");
+        // Enforce minimum to avoid rounding errors; (Minimum value is the same as in Balancer)
+        require(balance(_token) >= 10**6, "BALANCE_TOO_SMALL");
 
-        require(msg.sender == ds.contractOwner, "Must own the contract.");
-        require(es.totalSupply >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");
-        require(es.totalSupply <= _maxCap, "MAX_POOL_CAP_REACHED");
+        bs.inPool[_token] = true;
+        bs.tokens.push(IERC20(_token));
+    }
 
-        for (uint256 i = 0; i < bs.tokens.length; i ++){
-            bs.inPool[address(bs.tokens[i])] = false;
+    function removeToken(address _token) external protectedCall {
+        LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
+
+        require(bs.inPool[_token], "TOKEN_NOT_IN_POOL");
+
+        bs.inPool[_token] = false;
+
+        // remove token from array
+        // TODO consider limiting max amount of tokens to mitigate running out of gas.
+        for(uint256 i; i < bs.tokens.length; i ++) {
+            if(address(bs.tokens[i]) == _token) {
+                bs.tokens[i] = bs.tokens[bs.tokens.length - 1];
+                bs.tokens.pop();
+
+                break;
+            }
         }
-        delete bs.tokens;
-
-        for (uint256 i = 0; i < _tokens.length; i ++) {
-            bs.tokens.push(IERC20(_tokens[i]));
-            bs.inPool[_tokens[i]] = true;
-            // requires some initial supply, could be less than 1 gwei, but yea.
-            require(balance(_tokens[i]) >= MIN_AMOUNT, "TOKEN_BALANCE_TOO_LOW");
-        }
-
-        // unlock the contract
-        this.setMaxCap(_maxCap);
-        this.setLock(block.number.sub(1));
     }
 
     function joinPool(uint256 _amount) external noReentry {
@@ -80,13 +107,12 @@ contract BasketFacet is ReentryProtectionFacet {
         return bs.lockBlock == 0 || bs.lockBlock >= block.number;
     }
 
+    function getLockBlock() external view returns(uint256) {
+        return LibBasketStorage.basketStorage().lockBlock;
+    }
+
     // lock up to and including _lock blocknumber
-    function setLock(uint256 _lock) external {
-        // Maybe remove the first check
-        require(
-            msg.sender == LibDiamond.diamondStorage().contractOwner ||
-            msg.sender == address(this), "NOT_ALLOWED"
-        );
+    function setLock(uint256 _lock) external protectedCall {
         LibBasketStorage.basketStorage().lockBlock = _lock;
     }
 
@@ -94,11 +120,7 @@ contract BasketFacet is ReentryProtectionFacet {
         return LibBasketStorage.basketStorage().maxCap;
     }
 
-    function setMaxCap(uint256 _maxCap) external returns(uint256){
-        require(
-            msg.sender == LibDiamond.diamondStorage().contractOwner ||
-            msg.sender == address(this), "NOT_ALLOWED"
-        );
+    function setMaxCap(uint256 _maxCap) external protectedCall returns(uint256){
         LibBasketStorage.basketStorage().maxCap = _maxCap;
     }
 

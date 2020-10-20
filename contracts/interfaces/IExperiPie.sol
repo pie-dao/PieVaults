@@ -16,6 +16,7 @@ interface IExperiPie is IERC20 {
     function getTokens() external view returns (address[] memory);
     function addToken(address _token) external;
     function removeToken(address _token) external;
+    function getTokenInPool(address _token) external view returns(bool);
 
 
     // ERC20 facet

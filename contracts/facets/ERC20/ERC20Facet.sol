@@ -8,8 +8,9 @@ import "diamond-3/contracts/libraries/LibDiamond.sol";
 
 import "./LibERC20Storage.sol";
 import "./LibERC20.sol";
+import "../shared/Access/CallProtection.sol";
 
-contract ERC20Facet is IERC20 {
+contract ERC20Facet is IERC20, CallProtection {
   using SafeMath for uint256;
 
   function initialize(
@@ -40,6 +41,14 @@ contract ERC20Facet is IERC20 {
 
   function decimals() external view returns (uint8) {
     return LibERC20Storage.erc20Storage().decimals;
+  }
+
+  function mint(address _receiver, uint256 _amount) protectedCall external {
+    LibERC20.mint(_receiver, _amount);
+  }
+
+  function burn(address _from, uint256 _amount) protectedCall external {
+    LibERC20.burn(_from, _amount);
   }
 
   function approve(address _spender, uint256 _amount)

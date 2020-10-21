@@ -80,7 +80,7 @@ describe("BasketFacet", function() {
 
     beforeEach(async() => {
         await timeTraveler.revertSnapshot();
-    })
+    });
 
 
     describe("MaxCap", async () => {

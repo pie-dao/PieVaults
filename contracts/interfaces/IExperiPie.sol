@@ -29,8 +29,15 @@ interface IExperiPie is IERC20 {
 
     function getTokenInPool(address _token) external view returns (bool);
 
-    // ERC20 facet
+    function mint(address _receiver, uint256 _amount) external;
+    function burn(address _from, uint256 _amount) external;
 
+    // ERC20
+    function name() external view returns (string memory);
+    function symbol() external view returns (string memory);
+    function decimals() external view returns (uint8);
+
+    // ERC20 facet
     function initialize(
         uint256 _initialSupply,
         string memory _name,

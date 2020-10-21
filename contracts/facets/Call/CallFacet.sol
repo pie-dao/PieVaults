@@ -18,7 +18,6 @@ contract CallFacet is ReentryProtection, CallProtection {
     );
 
     for (uint256 i = 0; i < _targets.length; i++) {
-      // address(test).call{value: 1}(abi.encodeWithSignature("nonExistingFunction()"))
       (bool success, ) = _targets[i].call{ value: _values[i] }(_calldata[i]);
       require(success, "CALL_FAILED");
     }

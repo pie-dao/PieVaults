@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.1;
+pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
@@ -31,6 +32,13 @@ interface IExperiPie is IERC20 {
 
     function mint(address _receiver, uint256 _amount) external;
     function burn(address _from, uint256 _amount) external;
+
+    // CallFacet
+    function call(
+        address[] memory _targets,
+        bytes[] memory _calldata,
+        uint256[] memory _values
+    ) external;
 
     // ERC20
     function name() external view returns (string memory);

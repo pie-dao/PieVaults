@@ -152,7 +152,7 @@ describe("BasketFacet", function() {
         });
       });
 
-      describe.only("Joining and exiting", async () => {
+      describe("Joining and exiting", async () => {
         beforeEach(async() => {
           for(let token of testTokens) {
             await token.approve(experiPie.address, constants.MaxUint256);

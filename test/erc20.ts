@@ -30,7 +30,7 @@ function getSelectors(contract: Contract) {
 const NAME = "TEST POOL";
 const SYMBOL = "TPL";
 
-describe.only("ERC20Facet", function() {
+describe("ERC20Facet", function() {
     this.timeout(300000);
 
     let experiPie: IExperiPie;

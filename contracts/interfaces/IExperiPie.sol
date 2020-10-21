@@ -40,6 +40,11 @@ interface IExperiPie is IERC20 {
         uint256[] memory _values
     ) external;
 
+    // Ownership
+
+    function transferOwnership(address _newOwner) external;
+    function owner() external view returns(address);
+
     // ERC20
     function name() external view returns (string memory);
     function symbol() external view returns (string memory);

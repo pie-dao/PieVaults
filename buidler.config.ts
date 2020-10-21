@@ -31,7 +31,8 @@ const config = {
   solc: {
     version: '0.7.1',
     optimizer: {
-      enabled: false,
+      // Factory goes above contract size limit
+      enabled: true,
       runs: 200
     }
   },

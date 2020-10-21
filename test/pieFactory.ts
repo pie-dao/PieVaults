@@ -56,7 +56,7 @@ describe.only("PieFactoryContract", function() {
         const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact)) as DiamondLoupeFacet;
         const ownershipFacet = (await deployContract(signers[0], OwnerShipFacetArtifact)) as OwnershipFacet;
 
-        const cut = [
+        const diamondCut = [
             {
                 action: FacetCutAction.Add,
                 facetAddress: basketFacet.address,
@@ -87,9 +87,14 @@ describe.only("PieFactoryContract", function() {
                 facetAddress: ownershipFacet.address,
                 functionSelectors: getSelectors(ownershipFacet)
             },   
-        ]
+        ];
 
         pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact)) as PieFactoryContract;
+
+        // Add default facets
+        for(const facet of diamondCut) {
+            await pieFactory.addFacet(facet);
+        }
 
         for(let i = 0; i < 3; i ++) {
           const token = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;

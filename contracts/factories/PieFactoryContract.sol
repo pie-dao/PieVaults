@@ -15,6 +15,8 @@ contract PieFactoryContract is Ownable {
 
     IDiamondCut.FacetCut[] public defaultCut;
 
+    event PieCreated(address indexed pieAddress, address indexed deployer, uint256 indexed index);
+
     function setDefaultController(address _controller) external onlyOwner {
         defaultController = _controller;
     }
@@ -65,7 +67,16 @@ contract PieFactoryContract is Ownable {
         // Send minted pie to msg.sender
         pie.transfer(msg.sender, _initialSupply);
         pie.transferOwnership(defaultController);
+
+        emit PieCreated(address(d), msg.sender, pies.length - 1);
     }
 
+    function getDefaultCut() external view returns (IDiamondCut.FacetCut[] memory) {
+        return defaultCut;
+    }
+
+    function getDefaultCutCount() external view returns (uint256) {
+        return defaultCut.length;
+    }
 
 }

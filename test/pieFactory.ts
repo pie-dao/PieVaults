@@ -1,7 +1,7 @@
 import chai, {expect} from "chai";
 import { deployContract, solidity} from "ethereum-waffle";
 import { ethers, run, ethereum, network } from "@nomiclabs/buidler";
-import { Signer, constants, BigNumber, utils, Contract, BytesLike } from "ethers";
+import { Signer, constants, BigNumber, utils, Contract, BytesLike, BigNumberish } from "ethers";
 
 import BasketFacetArtifact from "../artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "../artifacts/ERC20Facet.json";
@@ -16,6 +16,7 @@ import { Erc20Facet, BasketFacet, CallFacet, DiamondFactoryContract, TestToken, 
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
 import { parseEther } from "ethers/lib/utils";
+import { IExperiPieFactory } from "../typechain/IExperiPieFactory";
 
 chai.use(solidity);
 
@@ -24,6 +25,8 @@ const FacetCutAction = {
     Replace: 1,
     Remove: 2,
 };
+
+const PLACE_HOLDER_ADDRESS = "0x0000000000000000000000000000000000000001";
 
 
 function getSelectors(contract: Contract) {
@@ -42,6 +45,7 @@ describe.only("PieFactoryContract", function() {
     let account: string;
     let signers: Signer[];
     let timeTraveler: TimeTraveler;
+    let diamondCut: any[];
     const testTokens: TestToken[] = [];
 
     before(async() => {
@@ -56,7 +60,7 @@ describe.only("PieFactoryContract", function() {
         const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact)) as DiamondLoupeFacet;
         const ownershipFacet = (await deployContract(signers[0], OwnerShipFacetArtifact)) as OwnershipFacet;
 
-        const diamondCut = [
+        diamondCut = [
             {
                 action: FacetCutAction.Add,
                 facetAddress: basketFacet.address,
@@ -96,9 +100,12 @@ describe.only("PieFactoryContract", function() {
             await pieFactory.addFacet(facet);
         }
 
+        await pieFactory.setDefaultController(account);
+
         for(let i = 0; i < 3; i ++) {
           const token = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;
           await token.mint(parseEther("1000000"), account);
+          await token.approve(pieFactory.address, constants.MaxUint256);
           testTokens.push(token);
         }
 
@@ -109,16 +116,111 @@ describe.only("PieFactoryContract", function() {
         await timeTraveler.revertSnapshot();
     });
 
-    // it("kek", async() => {
-    //     console.log("kek");
-    // });
+    describe("setDefaultController()", async() => {
+        it("Setting the default controller should work", async() => {
+            await pieFactory.setDefaultController(PLACE_HOLDER_ADDRESS);
+            const controller = await pieFactory.defaultController();
 
-    // TODO setController
+            expect(controller).to.eq(PLACE_HOLDER_ADDRESS);
+        });
+        it("Setting the default controller from a non owner account should work", async() => {
+            await expect(pieFactory.connect(signers[1]).setDefaultController(PLACE_HOLDER_ADDRESS)).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    });
 
-    // TODO removeFacet
+    describe("removeFacet()", async() => {
+        it("Removing a facet should work", async() => {
+            const facetsBefore = await pieFactory.getDefaultCut();
+            
+            await pieFactory.removeFacet(0);
 
-    // TODO addFacet
+            const facetsAfter = await pieFactory.getDefaultCut();
 
-    // TODO bakePie
+            expect(facetsAfter.length).to.eq(facetsBefore.length - 1);
+
+            expect(facetsAfter[0]).to.eql(facetsBefore[facetsBefore.length - 1]);
+            expect(facetsAfter[1]).to.eql(facetsBefore[1]);
+            expect(facetsAfter[2]).to.eql(facetsBefore[2]);
+            expect(facetsAfter[3]).to.eql(facetsBefore[3]);
+            expect(facetsAfter[4]).to.eql(facetsBefore[4]);
+        });
+
+        it("Removing a facet from a non owner account should fail", async() => {
+            await expect(pieFactory.connect(signers[1]).removeFacet(0)).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    });
+
+    describe("addFacet()", async() => {
+        let startingFacets: any;
+        beforeEach(async() => {
+            startingFacets = await pieFactory.getDefaultCut();
+            // Remove facet so we can add it again
+            await pieFactory.removeFacet(diamondCut.length - 1);
+        });
+        it("Adding a facet should work", async() => {
+            await pieFactory.addFacet(diamondCut[diamondCut.length - 1]);
+            const facetsAfter = await pieFactory.getDefaultCut();
+
+            expect(facetsAfter).to.eql(startingFacets);
+        });
+        it("Adding a facet from a non owner account should fail", async() => {
+            await expect(pieFactory.connect(signers[1]).addFacet(diamondCut[diamondCut.length - 1])).to.be.revertedWith("Ownable: caller is not the owner");
+        });
+    });
+
+
+    describe("bakePie()", async() => {
+        it("Baking a Pie should work", async() => {
+            
+            const initialSupply = parseEther("100");
+            const symbol = "SYMBOL";
+            const name = "NAME";
+            const initialTokenAmount = parseEther("10");
+
+            await pieFactory.bakePie(
+                testTokens.map((token) => token.address),
+                testTokens.map(() => initialTokenAmount),
+                initialSupply,
+                symbol,
+                name
+            );
+            
+            const pieAddress = await pieFactory.pies(0);
+            const pie: IExperiPie = IExperiPieFactory.connect(pieAddress, signers[0]);
+            
+            // Metadata
+
+            const pieInitialSupply = await pie.totalSupply();
+            const pieSymbol = await pie.symbol();
+            const pieName = await pie.name();
+            const pieDecimals = await pie.decimals();
+
+            expect(pieInitialSupply).to.eq(initialSupply);
+            expect(pieSymbol).to.eq(symbol);
+            expect(pieName).to.eq(name);
+            expect(pieDecimals).to.eq(18);
+
+            // Balances
+            
+            const userPieBalance = await pie.balanceOf(account);
+
+            for(const token of testTokens) {
+                const balance = await token.balanceOf(pie.address);
+                expect(balance).to.eq(initialTokenAmount);
+            }
+
+            expect(userPieBalance).to.eq(initialSupply);
+
+            // Control params
+
+            const pieOwner = await pie.owner();
+            const lockBlock = await pie.getLockBlock();
+            const maxCap = await pie.getMaxCap();
+
+            expect(pieOwner).to.eq(account);
+            expect(lockBlock).to.eq(1);
+            expect(maxCap).to.eq(constants.MaxUint256);
+        });
+    });
 
 });

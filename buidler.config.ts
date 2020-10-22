@@ -1,15 +1,31 @@
 import { usePlugin, task, types } from  "@nomiclabs/buidler/config";
 
-import {Signer, Wallet, utils, constants} from "ethers";
+import {Signer, Wallet, utils, constants, Contract, BytesLike} from "ethers";
 import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { DiamondFactory, DiamondFactoryContractFactory } from "./typechain";
+import { BasketFacet, CallFacet, DiamondCutFacet, DiamondFactory, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract } from "./typechain";
+
+import BasketFacetArtifact from "./artifacts/BasketFacet.json";
+import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
+import CallFacetArtifact from "./artifacts/CallFacet.json";
+import DiamondCutFacetArtifact from "./artifacts/DiamondCutFacet.json";
+import DiamondLoupeFacetArtifact from "./artifacts/DiamondLoupeFacet.json";
+import OwnerShipFacetArtifact from "./artifacts/OwnerShipFacet.json";
+import PieFactoryContractArtifact from "./artifacts/PieFactoryContract.json";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
 
+function getSelectors(contract: Contract) {
+  const signatures: BytesLike[] = [];
+  for(const key of Object.keys(contract.functions)) {
+      signatures.push(utils.keccak256(utils.toUtf8Bytes(key)).substr(0, 10));
+  }
+
+  return signatures;
+}
 
 const config = {
   defaultNetwork: 'buidlerevm',
@@ -57,6 +73,79 @@ task("deploy-diamond-from-factory")
     const diamondFactory = DiamondFactoryContractFactory.connect(taskArgs.factory, signers[0]);
 
     diamondFactory.deployNewDiamond(account, diamondCut);
+});
+
+task("deploy-pie-factory")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    const account = await signers[0].getAddress();
+
+    const contracts: any[] = [];
+    
+    const basketFacet = (await deployContract(signers[0], BasketFacetArtifact)) as BasketFacet;
+    contracts.push({name: "basketFacet", address: basketFacet.address});
+    const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact)) as Erc20Facet;
+    contracts.push({name: "erc20Facet", address: erc20Facet.address});
+    const callFacet = (await deployContract(signers[0], CallFacetArtifact)) as CallFacet;
+    contracts.push({name: "callFacet", address: callFacet.address});
+    const diamondCutFacet = (await deployContract(signers[0], DiamondCutFacetArtifact)) as DiamondCutFacet;
+    contracts.push({name: "diamondCutFacet", address: diamondCutFacet.address});
+    const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact)) as DiamondLoupeFacet;
+    contracts.push({name: "diamondLoupeFacet", address: diamondLoupeFacet.address});
+    const ownershipFacet = (await deployContract(signers[0], OwnerShipFacetArtifact)) as OwnershipFacet;
+    contracts.push({name: "ownershipFacet", address: ownershipFacet.address});
+
+    console.table(contracts);
+
+    const FacetCutAction = {
+      Add: 0,
+      Replace: 1,
+      Remove: 2,
+    };
+
+    const diamondCut = [
+        {
+            action: FacetCutAction.Add,
+            facetAddress: basketFacet.address,
+            functionSelectors: getSelectors(basketFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: erc20Facet.address,
+            functionSelectors: getSelectors(erc20Facet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: callFacet.address,
+            functionSelectors: getSelectors(callFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: diamondCutFacet.address,
+            functionSelectors: getSelectors(diamondCutFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: diamondLoupeFacet.address,
+            functionSelectors: getSelectors(diamondLoupeFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: ownershipFacet.address,
+            functionSelectors: getSelectors(ownershipFacet)
+        },   
+    ];
+
+    console.log("deploying factory");
+    const pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact)) as PieFactoryContract;
+    console.log(`Factory deployed at: ${pieFactory.address}`);
+
+    // Add default facets
+    for(const facet of diamondCut) {
+      console.log("adding default facet");
+      await pieFactory.addFacet(facet);
+    }
+    
 });
 
 export default config;

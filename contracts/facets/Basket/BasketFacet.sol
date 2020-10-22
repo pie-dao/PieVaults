@@ -2,6 +2,7 @@
 pragma solidity ^0.7.1;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "../ERC20/LibERC20Storage.sol";
 import "../ERC20/LibERC20.sol";
 import "./LibBasketStorage.sol";
@@ -10,6 +11,7 @@ import "../shared/Access/CallProtection.sol";
 
 contract BasketFacet is ReentryProtection, CallProtection {
     using SafeMath for uint256;
+    using SafeERC20 for IERC20;
 
     uint256 constant MIN_AMOUNT = 10**6;
 
@@ -51,7 +53,8 @@ contract BasketFacet is ReentryProtection, CallProtection {
         for(uint256 i; i < bs.tokens.length; i ++) {
             IERC20 token = bs.tokens[i];
             uint256 tokenAmount = balance(address(token)).mul(_amount).div(totalSupply);
-            require(token.transferFrom(msg.sender, address(this), tokenAmount), "Transfer Failed");
+            require(tokenAmount != 0, "AMOUNT_TOO_SMALL");
+            token.safeTransferFrom(msg.sender, address(this), tokenAmount);
         }
 
         LibERC20.mint(msg.sender, _amount);
@@ -69,7 +72,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
             uint256 balance = balance(address(token));
             uint256 tokenAmount = balance.mul(_amount).div(totalSupply);
             require(balance.sub(tokenAmount) >= MIN_AMOUNT, "TOKEN_BALANCE_TOO_LOW");
-            require(token.transfer(msg.sender, tokenAmount), "Transfer Failed");
+            token.safeTransfer(msg.sender, tokenAmount);
         }
 
         require(totalSupply.sub(_amount) >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");

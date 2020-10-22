@@ -4,10 +4,12 @@ pragma experimental ABIEncoderV2;
 
 import "diamond-3/contracts/Diamond.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
 import "../interfaces/IExperiPie.sol";
 
 contract PieFactoryContract is Ownable {
+    using SafeERC20 for IERC20;
 
     address[] public pies;
     mapping(address => bool) public isPie;
@@ -54,7 +56,7 @@ contract PieFactoryContract is Ownable {
         // Transfer and add tokens
         for(uint256 i = 0; i < _tokens.length; i ++) {
             IERC20 token = IERC20(_tokens[i]);
-            require(token.transferFrom(msg.sender, address(pie), _amounts[i]), "TRANSFER_FAILED");
+            token.safeTransferFrom(msg.sender, address(pie), _amounts[i]);
             pie.addToken(_tokens[i]);
         }
 

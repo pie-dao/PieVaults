@@ -38,7 +38,7 @@ function getSelectors(contract: Contract) {
     return signatures;
 }
 
-describe.only("PieFactoryContract", function() {
+describe("PieFactoryContract", function() {
     this.timeout(300000);
 
     let pieFactory: PieFactoryContract;

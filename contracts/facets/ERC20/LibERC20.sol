@@ -2,8 +2,8 @@
 pragma solidity ^0.7.1;
 
 import "./LibERC20Storage.sol";
-import "../../openzeppelin/token/ERC20/IERC20.sol";
-import "../../openzeppelin/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts/math/SafeMath.sol";
 
 library LibERC20 {
   using SafeMath for uint256;

@@ -2,7 +2,7 @@
 pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.1;
 
-import "diamond-3/contracts/libraries/LibDiamond.sol";
+import "diamond-2/contracts/libraries/LibDiamond.sol";
 import "../shared/Reentry/ReentryProtection.sol";
 import "../shared/Access/CallProtection.sol";
 

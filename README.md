@@ -13,4 +13,4 @@ See the [forum post](https://forum.piedao.org/t/pool-experipie/210) for more inf
 
 Depends on
 
-https://github.com/mudgen/diamond-3 (1.3.2)
+https://github.com/mudgen/diamond-2

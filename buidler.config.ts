@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 import { usePlugin, task, types } from  "@nomiclabs/buidler/config";
 
 import {Signer, Wallet, utils, constants, Contract, BytesLike} from "ethers";
@@ -5,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, DiamondCutFacet, DiamondFactory, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract } from "./typechain";
+import { BasketFacet, CallFacet, DiamondCutFacet, DiamondFactory, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory } from "./typechain";
 
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
@@ -14,9 +16,11 @@ import DiamondCutFacetArtifact from "./artifacts/DiamondCutFacet.json";
 import DiamondLoupeFacetArtifact from "./artifacts/DiamondLoupeFacet.json";
 import OwnerShipFacetArtifact from "./artifacts/OwnerShipFacet.json";
 import PieFactoryContractArtifact from "./artifacts/PieFactoryContract.json";
+import { IExperiPieFactory } from "./typechain/IExperiPieFactory";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
+usePlugin("@nomiclabs/buidler-etherscan");
 
 function getSelectors(contract: Contract) {
   const signatures: BytesLike[] = [];
@@ -37,6 +41,10 @@ const config = {
     localhost: {
       url: 'http://localhost:8545'
     },
+    kovan: {
+      url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+      accounts: [process.env.PRIVATE_KEY]
+    },
     coverage: {
       url: 'http://localhost:8555'
     },
@@ -52,6 +60,7 @@ const config = {
       runs: 200
     }
   },
+  etherscan: { apiKey: process.env.ETHERSCAN_KEY }
 }
 
 task("deploy-diamond-factory")
@@ -75,10 +84,36 @@ task("deploy-diamond-from-factory")
     diamondFactory.deployNewDiamond(account, diamondCut);
 });
 
+task("execute-calls")
+  .addParam("pie", "address of the pie")
+  .addParam("input", "calls.json", "./call.json")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    const account = await signers[0].getAddress();
+
+    const pie = IExperiPieFactory.connect(taskArgs.pie, signers[0]);
+
+    const calls = require(taskArgs.input);
+
+    const targets: string[] = calls.map((item) => item.target);
+    const data: string[] = calls.map((item) => item.data);
+    const values: string[] = calls.map((item) => item.value);
+
+    const tx = await pie.call(
+      targets,
+      data,
+      values
+    );
+
+    console.log("Calls send tx id:", tx.hash);
+});
+
 task("deploy-pie-factory")
   .setAction(async(taskArgs, {ethers}) => {
     const signers = await ethers.getSigners();
     const account = await signers[0].getAddress();
+
+    console.log("deploying from:", account);
 
     const contracts: any[] = [];
     
@@ -143,7 +178,7 @@ task("deploy-pie-factory")
     // Add default facets
     for(const facet of diamondCut) {
       console.log("adding default facet");
-      await pieFactory.addFacet(facet);
+      await (await pieFactory.addFacet(facet)).wait(1);
     }
     
 });

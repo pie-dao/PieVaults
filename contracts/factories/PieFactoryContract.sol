@@ -64,7 +64,7 @@ contract PieFactoryContract is Ownable {
         pie.setLock(1);
 
         // Uncap pool
-        pie.setMaxCap(uint256(-1));
+        pie.setCap(uint256(-1));
 
         // Send minted pie to msg.sender
         pie.transfer(msg.sender, _initialSupply);

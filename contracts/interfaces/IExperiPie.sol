@@ -16,9 +16,9 @@ interface IExperiPie is IERC20 {
 
     function setLock(uint256 _lock) external;
 
-    function getMaxCap() external view returns (uint256);
+    function getCap() external view returns (uint256);
 
-    function setMaxCap(uint256 _maxCap) external returns (uint256);
+    function setCap(uint256 _maxCap) external returns (uint256);
 
     function balance(address _token) external view returns (uint256);
 

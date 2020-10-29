@@ -48,7 +48,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
         require(!this.getLock(), "POOL_LOCKED");
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
-        require(totalSupply.add(_amount) < this.getMaxCap(), "MAX_POOL_CAP_REACHED");
+        require(totalSupply.add(_amount) < this.getCap(), "MAX_POOL_CAP_REACHED");
 
         for(uint256 i; i < bs.tokens.length; i ++) {
             IERC20 token = bs.tokens[i];
@@ -98,11 +98,11 @@ contract BasketFacet is ReentryProtection, CallProtection {
         LibBasketStorage.basketStorage().lockBlock = _lock;
     }
 
-    function getMaxCap() external view returns(uint256){
+    function getCap() external view returns(uint256){
         return LibBasketStorage.basketStorage().maxCap;
     }
 
-    function setMaxCap(uint256 _maxCap) external protectedCall returns(uint256){
+    function setCap(uint256 _maxCap) external protectedCall returns(uint256){
         LibBasketStorage.basketStorage().maxCap = _maxCap;
     }
 

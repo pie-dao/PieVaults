@@ -122,4 +122,23 @@ contract BasketFacet is ReentryProtection, CallProtection {
         return(result);
     }
 
+    function calcTokensForAmount(uint256 _amount) external view returns (address[] memory tokens, uint256[] memory amounts) {
+        LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
+        uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
+
+        tokens = new address[](bs.tokens.length);
+        amounts = new uint256[](bs.tokens.length);
+
+        for(uint256 i; i < bs.tokens.length; i ++) {
+            IERC20 token = bs.tokens[i];
+            uint256 balance = balance(address(token));
+            uint256 tokenAmount = balance.mul(_amount).div(totalSupply);
+            
+            tokens[i] = address(token);
+            amounts[i] = tokenAmount;
+        }
+
+        return(tokens, amounts);
+    }
+
 }

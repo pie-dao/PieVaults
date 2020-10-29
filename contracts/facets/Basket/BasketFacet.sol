@@ -13,7 +13,10 @@ contract BasketFacet is ReentryProtection, CallProtection {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-    uint256 constant MIN_AMOUNT = 10**6;
+    uint256 public constant MIN_AMOUNT = 10**6;
+    uint256 public constant MAX_ENTRY_FEE = 10**17; // 10%
+    uint256 public constant MAX_EXIT_FEE = 10**17; // 10%
+    uint256 public constant MAX_ANNUAL_FEE = 10**17; // 10%
 
     function addToken(address _token) external protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
@@ -44,39 +47,134 @@ contract BasketFacet is ReentryProtection, CallProtection {
         }
     }
 
+    function setEntryFee(uint256 _fee) external protectedCall {
+        require(_fee <= MAX_ENTRY_FEE, "FEE_TOO_BIG");
+        LibBasketStorage.basketStorage().entryFee = _fee;
+    }
+
+    function setExtitFee(uint256 _fee) external protectedCall {
+        require(_fee <= MAX_EXIT_FEE, "FEE_TOO_BIG");
+        LibBasketStorage.basketStorage().exitFee = _fee;
+    }
+
+    function setAnnualizedFee(uint256 _fee) external protectedCall {
+        require(_fee <= MAX_ANNUAL_FEE, "FEE_TOO_BIG");
+        LibBasketStorage.basketStorage().annualizedFee = _fee;
+    }
+
+    function setFeeBeneficiary(address _beneficiary) external protectedCall {
+        LibBasketStorage.basketStorage().feeBeneficiary = _beneficiary;
+    }
+
+    function setEntryFeeBeneficiaryShare(uint256 _share) external protectedCall {
+        require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
+        LibBasketStorage.basketStorage().entryFeeBeneficiaryShare = _share;
+    }
+
+    function setExitFeeBeneficiaryShare(uint256 _share) external protectedCall {
+        require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
+        LibBasketStorage.basketStorage().exitFeeBeneficiaryShare = _share;
+    }
+ 
     function joinPool(uint256 _amount) external noReentry {
         require(!this.getLock(), "POOL_LOCKED");
+        chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
         require(totalSupply.add(_amount) < this.getCap(), "MAX_POOL_CAP_REACHED");
 
+        uint256 feeAmount = _amount.mul(bs.entryFee).div(10**18);
+
         for(uint256 i; i < bs.tokens.length; i ++) {
             IERC20 token = bs.tokens[i];
-            uint256 tokenAmount = balance(address(token)).mul(_amount).div(totalSupply);
+            uint256 tokenAmount = balance(address(token)).mul(_amount.add(feeAmount)).div(totalSupply);
             require(tokenAmount != 0, "AMOUNT_TOO_SMALL");
             token.safeTransferFrom(msg.sender, address(this), tokenAmount);
+        }
+
+        // If there is any fee that should go to the beneficiary mint it
+        if(
+            feeAmount != 0 &&
+            bs.entryFeeBeneficiaryShare != 0 &&
+            bs.feeBeneficiary != address(0)
+        ) {
+            uint256 feeBeneficiaryShare = feeAmount.mul(bs.entryFeeBeneficiaryShare).div(10**18);
+            if(feeBeneficiaryShare != 0) {
+                LibERC20.mint(bs.feeBeneficiary, feeBeneficiaryShare);
+            }
         }
 
         LibERC20.mint(msg.sender, _amount);
     }
 
-
     // Must be overwritten to withdraw from strategies
     function exitPool(uint256 _amount) external virtual noReentry {
         require(!this.getLock(), "POOL_LOCKED");
+        chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
 
+        uint256 feeAmount = _amount.mul(bs.exitFee).div(10**18);
+
         for(uint256 i; i < bs.tokens.length; i ++) {
             IERC20 token = bs.tokens[i];
-            uint256 balance = balance(address(token));
-            uint256 tokenAmount = balance.mul(_amount).div(totalSupply);
-            require(balance.sub(tokenAmount) >= MIN_AMOUNT, "TOKEN_BALANCE_TOO_LOW");
+            uint256 tokenBalance = balance(address(token));
+            // redeem less tokens if there is an exit fee
+            uint256 tokenAmount = tokenBalance.mul(_amount.sub(feeAmount)).div(totalSupply);
+            require(tokenBalance.sub(tokenAmount) >= MIN_AMOUNT, "TOKEN_BALANCE_TOO_LOW");
             token.safeTransfer(msg.sender, tokenAmount);
+        }
+
+         // If there is any fee that should go to the beneficiary mint it
+        if(
+            feeAmount != 0 &&
+            bs.exitFeeBeneficiaryShare != 0 &&
+            bs.feeBeneficiary != address(0)
+        ) {
+            uint256 feeBeneficiaryShare = feeAmount.mul(bs.entryFeeBeneficiaryShare).div(10**18);
+            if(feeBeneficiaryShare != 0) {
+                LibERC20.mint(bs.feeBeneficiary, feeBeneficiaryShare);
+            }
         }
 
         require(totalSupply.sub(_amount) >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");
         LibERC20.burn(msg.sender, _amount);
+    }
+
+
+    function calcOutStandingAnnualizedFee() public view returns(uint256) {
+        LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
+        uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
+
+        uint256 lastFeeClaimed = bs.lastAnnualizedFeeClaimed;
+        uint256 annualizedFee = bs.annualizedFee;
+
+        if(
+            bs.annualizedFee == 0 ||
+            bs.feeBeneficiary == address(0) ||
+            lastFeeClaimed == 0
+        ) {
+            return 0;
+        }
+
+        uint256 timePassed = block.timestamp.sub(lastFeeClaimed);
+
+        return totalSupply.mul(annualizedFee).div(10**18).mul(timePassed).div(365 days);
+    }
+
+    function chargeOutstandingAnnualizedFee() public {
+        uint256 outStandingFee = calcOutStandingAnnualizedFee();
+        LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
+
+        bs.lastAnnualizedFeeClaimed = block.timestamp;
+
+        // if there is any fee to mint and the beneficiary is set
+        if(
+            outStandingFee !=  0 &&
+            bs.feeBeneficiary != address(0)
+        ) {
+            LibERC20.mint(bs.feeBeneficiary, outStandingFee);
+        }
     }
 
     // returns true when locked
@@ -96,10 +194,6 @@ contract BasketFacet is ReentryProtection, CallProtection {
     // lock up to and including _lock blocknumber
     function setLock(uint256 _lock) external protectedCall {
         LibBasketStorage.basketStorage().lockBlock = _lock;
-    }
-
-    function getCap() external view returns(uint256){
-        return LibBasketStorage.basketStorage().maxCap;
     }
 
     function setCap(uint256 _maxCap) external protectedCall returns(uint256){
@@ -122,17 +216,23 @@ contract BasketFacet is ReentryProtection, CallProtection {
         return(result);
     }
 
+    function getCap() external view returns(uint256){
+        return LibBasketStorage.basketStorage().maxCap;
+    }
+
     function calcTokensForAmount(uint256 _amount) external view returns (address[] memory tokens, uint256[] memory amounts) {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
-        uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
+        uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply.add(calcOutStandingAnnualizedFee());
 
         tokens = new address[](bs.tokens.length);
         amounts = new uint256[](bs.tokens.length);
 
         for(uint256 i; i < bs.tokens.length; i ++) {
             IERC20 token = bs.tokens[i];
-            uint256 balance = balance(address(token));
-            uint256 tokenAmount = balance.mul(_amount).div(totalSupply);
+            uint256 tokenBalance = balance(address(token));
+            uint256 tokenAmount = tokenBalance.mul(_amount).div(totalSupply);
+            // Add entry fee
+            tokenAmount = tokenAmount.add(tokenAmount.mul(bs.entryFee).div(10**18));
             
             tokens[i] = address(token);
             amounts[i] = tokenAmount;
@@ -140,5 +240,8 @@ contract BasketFacet is ReentryProtection, CallProtection {
 
         return(tokens, amounts);
     }
+
+
+    // TODO calcTokensForAmountExit
 
 }

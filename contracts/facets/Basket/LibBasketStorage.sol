@@ -13,6 +13,13 @@ library LibBasketStorage {
     uint256 maxCap;
     IERC20[] tokens;
     mapping(address => bool) inPool;
+    uint256 entryFee;
+    uint256 entryFeeBeneficiaryShare; // amount of entry fee that goes to feeBeneficiary
+    uint256 exitFee;
+    uint256 exitFeeBeneficiaryShare; // amount of exit fee that goes to the pool itself
+    uint256 annualizedFee;
+    uint256 lastAnnualizedFeeClaimed;
+    address feeBeneficiary;
   }
 
   function basketStorage() internal pure returns (BasketStorage storage bs) {

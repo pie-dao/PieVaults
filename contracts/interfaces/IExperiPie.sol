@@ -40,6 +40,12 @@ interface IExperiPie is IERC20 {
         uint256[] memory _values
     ) external;
 
+    function addCaller(address _caller) external;
+    function removeCaller(address _caller) external;
+
+    function canCall(address _caller) external view returns (bool);
+    function getCallers() external view returns (address[] memory);
+
     // Ownership
 
     function transferOwnership(address _newOwner) external;

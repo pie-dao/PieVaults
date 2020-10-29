@@ -181,5 +181,105 @@ describe("CallFacet", function() {
             const balanceAfter = await token.balanceOf(experiPie.address);
             expect(balanceAfter).to.eq("0");
         });
-      });
+    });
+
+    describe("Access to call function", async() => {
+        it("Owner should be able to call", async() => {
+            const call = await experiPie.populateTransaction.setLock(1337);
+
+            await experiPie.call(
+                [call.to],
+                [call.data],
+                [0]
+            );
+      
+            const lockBlock = await experiPie.getLockBlock();
+            expect(lockBlock).to.eq(1337);
+        });
+        it("Whitelisted caller should be able to call", async() => {
+            const call = await experiPie.populateTransaction.setLock(1337);
+
+            await experiPie.addCaller(await signers[1].getAddress());
+
+            await experiPie.connect(signers[1]).call(
+                [call.to],
+                [call.data],
+                [0]
+            );
+            
+            const lockBlock = await experiPie.getLockBlock();
+            expect(lockBlock).to.eq(1337);
+        });
+        it("Non privileged user should not be able to call", async() => {
+            const call = await experiPie.populateTransaction.setLock(1337);
+
+            await expect(experiPie.connect(signers[1]).call(
+                [call.to],
+                [call.data],
+                [0]
+            )).to.be.revertedWith("NOT_ALLOWED");
+        });
+    });
+
+    describe("Adding and removal of callers", async() => {
+
+        const PLACE_HOLDER_1 = "0x0000000000000000000000000000000000000001"
+        const PLACE_HOLDER_2 = "0x0000000000000000000000000000000000000002"
+
+        it("Adding a caller should work", async() => {
+            await experiPie.addCaller(PLACE_HOLDER_1);
+
+            const canCall = await experiPie.canCall(PLACE_HOLDER_1);
+            const callers = await experiPie.getCallers();
+
+            expect(canCall).to.be.true;
+            expect(callers.length).to.eq(1);
+            expect(callers[0]).to.eq(PLACE_HOLDER_1);
+        });
+        it("Adding multiple callers should work", async() => {
+            await experiPie.addCaller(PLACE_HOLDER_1);
+            await experiPie.addCaller(PLACE_HOLDER_2);
+
+            const canCall1 = await experiPie.canCall(PLACE_HOLDER_1);
+            const canCall2 = await experiPie.canCall(PLACE_HOLDER_2);
+            const callers = await experiPie.getCallers();
+
+            expect(canCall1).to.be.true;
+            expect(canCall2).to.be.true;
+            expect(callers.length).to.eq(2);
+            expect(callers[0]).to.eq(PLACE_HOLDER_1);
+            expect(callers[1]).to.eq(PLACE_HOLDER_2);
+        });
+        it("Adding a caller from a non owner should fail", async() => {
+            await expect(experiPie.connect(signers[1]).addCaller(PLACE_HOLDER_1)).to.be.revertedWith("NOT_ALLOWED");
+        });
+        it("Removing a caller should work", async() => {
+            await experiPie.addCaller(PLACE_HOLDER_1);
+            await experiPie.removeCaller(PLACE_HOLDER_1);
+
+            const canCall = await experiPie.canCall(PLACE_HOLDER_1);
+            const callers = await experiPie.getCallers();
+
+            expect(canCall).to.be.false;
+            expect(callers.length).to.eq(0);
+        });
+        it("Removing a caller from a non owner should fail", async() => {
+            await experiPie.addCaller(PLACE_HOLDER_1);
+            await expect(experiPie.connect(signers[1]).removeCaller(PLACE_HOLDER_1)).to.be.revertedWith("NOT_ALLOWED");
+        });
+        it("Removing one of multiple callers should work", async() => {
+            await experiPie.addCaller(PLACE_HOLDER_1);
+            await experiPie.addCaller(PLACE_HOLDER_2);
+            await experiPie.removeCaller(PLACE_HOLDER_1);
+
+            const canCall1 = await experiPie.canCall(PLACE_HOLDER_1);
+            const canCall2 = await experiPie.canCall(PLACE_HOLDER_2);
+            const callers = await experiPie.getCallers();
+
+            expect(canCall1).to.be.false;
+            expect(canCall2).to.be.true;
+            expect(callers[0]).to.eq(PLACE_HOLDER_2);
+            expect(callers.length).to.eq(1);
+        });
+    });
 });

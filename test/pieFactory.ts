@@ -215,7 +215,7 @@ describe("PieFactoryContract", function() {
 
             const pieOwner = await pie.owner();
             const lockBlock = await pie.getLockBlock();
-            const maxCap = await pie.getMaxCap();
+            const maxCap = await pie.getCap();
 
             expect(pieOwner).to.eq(account);
             expect(lockBlock).to.eq(1);

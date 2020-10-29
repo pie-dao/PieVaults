@@ -85,20 +85,20 @@ describe("BasketFacet", function() {
 
     describe("MaxCap", async () => {
         it("Check default cap", async () => {
-          const maxCap = await experiPie.getMaxCap();
+          const maxCap = await experiPie.getCap();
           expect(maxCap).to.be.eq("0");
         });
-        it("Test setMaxCap not allowed", async () => {
+        it("Test setCap not allowed", async () => {
           let experiPieAltSigner = experiPie.connect(signers[1]);
           await expect(
             experiPieAltSigner
-              .setMaxCap(parseEther("1000"))
+              .setCap(parseEther("1000"))
           ).to.be.revertedWith("NOT_ALLOWED");
           
         });
         it("Set max cap", async () => {
-          await experiPie.setMaxCap(parseEther("100"));
-          const maxCap = await experiPie.getMaxCap();
+          await experiPie.setCap(parseEther("100"));
+          const maxCap = await experiPie.getCap();
           expect(maxCap).to.eq(parseEther("100"));
         });
     });
@@ -165,7 +165,7 @@ describe("BasketFacet", function() {
 
           await experiPie.initialize(parseEther("100"), "TEST", "TEST", 18);
           await experiPie.setLock(constants.One);
-          await experiPie.setMaxCap(constants.MaxUint256);
+          await experiPie.setCap(constants.MaxUint256);
         });
 
         const getBalances = async(address: string) => {
@@ -309,7 +309,7 @@ describe("BasketFacet", function() {
           const totalSupply = await experiPie.totalSupply();
           const mintAmount = parseEther("10000");
 
-          await experiPie.setMaxCap(totalSupply.add(mintAmount).sub(1))
+          await experiPie.setCap(totalSupply.add(mintAmount).sub(1))
     
           await expect(
             experiPie.joinPool(mintAmount)

@@ -26,7 +26,7 @@ contract CallFacet is ReentryProtection {
     require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
-    require(!callStorage.canCall[msg.sender], "IS_ALREADY_CALLER");
+    require(!callStorage.canCall[_caller], "IS_ALREADY_CALLER");
 
     callStorage.callers.push(_caller);
     callStorage.canCall[_caller] = true;
@@ -38,7 +38,9 @@ contract CallFacet is ReentryProtection {
     require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
-    require(callStorage.canCall[msg.sender], "IS_NOT_CALLER");
+    require(callStorage.canCall[_caller], "IS_NOT_CALLER");
+
+    callStorage.canCall[_caller] = false;
 
     for(uint256 i = 0; i < callStorage.callers.length; i ++) {
       address currentCaller = callStorage.callers[i];
@@ -68,5 +70,13 @@ contract CallFacet is ReentryProtection {
       (bool success, ) = _targets[i].call{ value: _values[i] }(_calldata[i]);
       require(success, "CALL_FAILED");
     }
+  }
+
+  function canCall(address _caller) external view returns (bool) {
+    return LibCallStorage.callStorage().canCall[_caller];
+  }
+
+  function getCallers() external view returns (address[] memory) {
+    return LibCallStorage.callStorage().callers;
   }
 }

@@ -33,6 +33,8 @@ interface IExperiPie is IERC20 {
     function mint(address _receiver, uint256 _amount) external;
     function burn(address _from, uint256 _amount) external;
 
+    function calcTokensForAmount(uint256 _amount) external view returns (address[] memory tokens, uint256[] memory amounts);
+
     // CallFacet
     function call(
         address[] memory _targets,

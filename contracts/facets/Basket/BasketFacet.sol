@@ -111,8 +111,15 @@ contract BasketFacet is ReentryProtection, CallProtection {
         return IERC20(_token).balanceOf(address(this));
     }
 
-    function getTokens() external view returns (IERC20[] memory) {
-        return(LibBasketStorage.basketStorage().tokens);
+    function getTokens() external view returns (address[] memory result) {
+        IERC20[] memory tokens = LibBasketStorage.basketStorage().tokens;
+        result = new address[](tokens.length);
+
+        for(uint256 i = 0; i < tokens.length; i ++) {
+            result[i] = address(tokens[i]);
+        }
+
+        return(result);
     }
 
 }

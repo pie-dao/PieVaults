@@ -14,7 +14,7 @@ import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
 import CallFacetArtifact from "./artifacts/CallFacet.json";
 import DiamondCutFacetArtifact from "./artifacts/DiamondCutFacet.json";
 import DiamondLoupeFacetArtifact from "./artifacts/DiamondLoupeFacet.json";
-import OwnerShipFacetArtifact from "./artifacts/OwnerShipFacet.json";
+import OwnershipFacetArtifact from "./artifacts/OwnershipFacet.json";
 import PieFactoryContractArtifact from "./artifacts/PieFactoryContract.json";
 import { IExperiPieFactory } from "./typechain/IExperiPieFactory";
 
@@ -116,7 +116,7 @@ task("deploy-pie-factory")
     console.log("deploying from:", account);
 
     const contracts: any[] = [];
-    
+
     const basketFacet = (await deployContract(signers[0], BasketFacetArtifact)) as BasketFacet;
     contracts.push({name: "basketFacet", address: basketFacet.address});
     const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact)) as Erc20Facet;
@@ -127,7 +127,7 @@ task("deploy-pie-factory")
     contracts.push({name: "diamondCutFacet", address: diamondCutFacet.address});
     const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact)) as DiamondLoupeFacet;
     contracts.push({name: "diamondLoupeFacet", address: diamondLoupeFacet.address});
-    const ownershipFacet = (await deployContract(signers[0], OwnerShipFacetArtifact)) as OwnershipFacet;
+    const ownershipFacet = (await deployContract(signers[0], OwnershipFacetArtifact)) as OwnershipFacet;
     contracts.push({name: "ownershipFacet", address: ownershipFacet.address});
 
     console.table(contracts);
@@ -168,7 +168,7 @@ task("deploy-pie-factory")
             action: FacetCutAction.Add,
             facetAddress: ownershipFacet.address,
             functionSelectors: getSelectors(ownershipFacet)
-        },   
+        },
     ];
 
     console.log("deploying factory");
@@ -180,7 +180,7 @@ task("deploy-pie-factory")
       console.log("adding default facet");
       await (await pieFactory.addFacet(facet)).wait(1);
     }
-    
+
 });
 
 export default config;

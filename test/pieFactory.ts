@@ -8,7 +8,7 @@ import Erc20FacetArtifact from "../artifacts/ERC20Facet.json";
 import CallFacetArtifact from "../artifacts/CallFacet.json";
 import DiamondCutFacetArtifact from "../artifacts/DiamondCutFacet.json";
 import DiamondLoupeFacetArtifact from "../artifacts/DiamondLoupeFacet.json";
-import OwnerShipFacetArtifact from "../artifacts/OwnerShipFacet.json";
+import OwnershipFacetArtifact from "../artifacts/OwnershipFacet.json";
 
 import PieFactoryContractArtifact from "../artifacts/PieFactoryContract.json";
 import TestTokenArtifact from "../artifacts/TestToken.json";
@@ -52,13 +52,13 @@ describe("PieFactoryContract", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const basketFacet = (await deployContract(signers[0], BasketFacetArtifact)) as BasketFacet;
         const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact)) as Erc20Facet;
         const callFacet = (await deployContract(signers[0], CallFacetArtifact)) as CallFacet;
         const diamondCutFacet = (await deployContract(signers[0], DiamondCutFacetArtifact)) as DiamondCutFacet;
         const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact)) as DiamondLoupeFacet;
-        const ownershipFacet = (await deployContract(signers[0], OwnerShipFacetArtifact)) as OwnershipFacet;
+        const ownershipFacet = (await deployContract(signers[0], OwnershipFacetArtifact)) as OwnershipFacet;
 
         diamondCut = [
             {
@@ -90,7 +90,7 @@ describe("PieFactoryContract", function() {
                 action: FacetCutAction.Add,
                 facetAddress: ownershipFacet.address,
                 functionSelectors: getSelectors(ownershipFacet)
-            },   
+            },
         ];
 
         pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact)) as PieFactoryContract;
@@ -131,7 +131,7 @@ describe("PieFactoryContract", function() {
     describe("removeFacet()", async() => {
         it("Removing a facet should work", async() => {
             const facetsBefore = await pieFactory.getDefaultCut();
-            
+
             await pieFactory.removeFacet(0);
 
             const facetsAfter = await pieFactory.getDefaultCut();
@@ -171,7 +171,7 @@ describe("PieFactoryContract", function() {
 
     describe("bakePie()", async() => {
         it("Baking a Pie should work", async() => {
-            
+
             const initialSupply = parseEther("100");
             const symbol = "SYMBOL";
             const name = "NAME";
@@ -184,10 +184,10 @@ describe("PieFactoryContract", function() {
                 symbol,
                 name
             );
-            
+
             const pieAddress = await pieFactory.pies(0);
             const pie: IExperiPie = IExperiPieFactory.connect(pieAddress, signers[0]);
-            
+
             // Metadata
 
             const pieInitialSupply = await pie.totalSupply();
@@ -201,7 +201,7 @@ describe("PieFactoryContract", function() {
             expect(pieDecimals).to.eq(18);
 
             // Balances
-            
+
             const userPieBalance = await pie.balanceOf(account);
 
             for(const token of testTokens) {

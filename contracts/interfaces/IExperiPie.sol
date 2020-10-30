@@ -5,6 +5,25 @@ pragma experimental ABIEncoderV2;
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 interface IExperiPie is IERC20 {
+    // fee functions
+    function setEntryFee(uint256 _fee) external;
+    function getEntryFee() external view returns(uint256);
+
+    function setExitFee(uint256 _fee) external;
+    function getExitFee() external view returns(uint256);
+
+    function setAnnualizedFee(uint256 _fee) external;
+    function getAnnualizedFee() external view returns(uint256);
+
+    function setFeeBeneficiary(address _beneficiary) external;
+    function getFeeBeneficiary() external view returns(address);
+
+    function setEntryFeeBeneficiaryShare(uint256 _share) external;
+    function getEntryFeeBeneficiaryShare() external view returns(uint256);
+
+    function setExitFeeBeneficiaryShare(uint256 _share) external;
+    function getExitFeeBeneficiaryShare() external view returns(uint256);
+
     // function initialize(address[] memory _tokens, uint256 _maxCap) external;
     function joinPool(uint256 _amount) external;
 

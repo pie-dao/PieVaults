@@ -52,9 +52,17 @@ contract BasketFacet is ReentryProtection, CallProtection {
         LibBasketStorage.basketStorage().entryFee = _fee;
     }
 
-    function setExtitFee(uint256 _fee) external protectedCall {
+    function getEntryFee() external view returns(uint256) {
+        return LibBasketStorage.basketStorage().entryFee;
+    }
+
+    function setExitFee(uint256 _fee) external protectedCall {
         require(_fee <= MAX_EXIT_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFee = _fee;
+    }
+
+    function getExitFee() external view returns(uint256) {
+        return LibBasketStorage.basketStorage().exitFee;
     }
 
     function setAnnualizedFee(uint256 _fee) external protectedCall {
@@ -62,8 +70,16 @@ contract BasketFacet is ReentryProtection, CallProtection {
         LibBasketStorage.basketStorage().annualizedFee = _fee;
     }
 
+    function getAnnualizedFee() external view returns(uint256) {
+        return LibBasketStorage.basketStorage().annualizedFee;
+    }
+
     function setFeeBeneficiary(address _beneficiary) external protectedCall {
         LibBasketStorage.basketStorage().feeBeneficiary = _beneficiary;
+    }
+
+    function getFeeBeneficiary() external view returns(address) {
+        return LibBasketStorage.basketStorage().feeBeneficiary;
     }
 
     function setEntryFeeBeneficiaryShare(uint256 _share) external protectedCall {
@@ -71,11 +87,20 @@ contract BasketFacet is ReentryProtection, CallProtection {
         LibBasketStorage.basketStorage().entryFeeBeneficiaryShare = _share;
     }
 
+    function getEntryFeeBeneficiaryShare() external view returns(uint256) {
+        return LibBasketStorage.basketStorage().entryFeeBeneficiaryShare;
+    }
+
     function setExitFeeBeneficiaryShare(uint256 _share) external protectedCall {
         require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFeeBeneficiaryShare = _share;
     }
- 
+
+    function getExitFeeBeneficiaryShare() external view returns(uint256) {
+        return LibBasketStorage.basketStorage().exitFeeBeneficiaryShare;
+    }
+
+
     function joinPool(uint256 _amount) external noReentry {
         require(!this.getLock(), "POOL_LOCKED");
         chargeOutstandingAnnualizedFee();
@@ -233,7 +258,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
             uint256 tokenAmount = tokenBalance.mul(_amount).div(totalSupply);
             // Add entry fee
             tokenAmount = tokenAmount.add(tokenAmount.mul(bs.entryFee).div(10**18));
-            
+
             tokens[i] = address(token);
             amounts[i] = tokenAmount;
         }

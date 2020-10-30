@@ -175,7 +175,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
         uint256 annualizedFee = bs.annualizedFee;
 
         if(
-            bs.annualizedFee == 0 ||
+            annualizedFee == 0 ||
             bs.feeBeneficiary == address(0) ||
             lastFeeClaimed == 0
         ) {
@@ -194,9 +194,9 @@ contract BasketFacet is ReentryProtection, CallProtection {
         bs.lastAnnualizedFeeClaimed = block.timestamp;
 
         // if there is any fee to mint and the beneficiary is set
+        // note: feeBeneficiary is already checked in calc function
         if(
-            outStandingFee !=  0 &&
-            bs.feeBeneficiary != address(0)
+            outStandingFee != 0
         ) {
             LibERC20.mint(bs.feeBeneficiary, outStandingFee);
         }

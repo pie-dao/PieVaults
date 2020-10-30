@@ -24,6 +24,9 @@ interface IExperiPie is IERC20 {
     function setExitFeeBeneficiaryShare(uint256 _share) external;
     function getExitFeeBeneficiaryShare() external view returns(uint256);
 
+    function calcOutStandingAnnualizedFee() external view returns(uint256);
+    function chargeOutstandingAnnualizedFee() external;
+
     // function initialize(address[] memory _tokens, uint256 _maxCap) external;
     function joinPool(uint256 _amount) external;
 

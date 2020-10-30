@@ -20,8 +20,6 @@ const FacetCutAction = {
     Remove: 2,
 };
 
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
-
 function getSelectors(contract: Contract) {
     const signatures: BytesLike[] = [];
     for(const key of Object.keys(contract.functions)) {
@@ -361,7 +359,59 @@ describe("BasketFacet", function() {
           await expect(experiPie.removeToken(constants.AddressZero)).to.be.revertedWith("TOKEN_NOT_IN_POOL");
         });
       });
-      describe.only("Fee setters", async () => {
+      describe.only("AnnualizedFee", async () => {
+        beforeEach(async() => {
+          for(let token of testTokens) {
+            await token.approve(experiPie.address, constants.MaxUint256);
+            await token.transfer(experiPie.address, parseEther("10000"));
+            const account1 = await signers[1].getAddress();
+            await token.mint(parseEther("10000"), account1);
+            token.connect(signers[1]).approve(experiPie.address, constants.MaxUint256);
+            await experiPie.addToken(token.address);
+          }
+
+          await experiPie.initialize(parseEther("100"), "TEST", "TEST", 18);
+          await experiPie.setLock(constants.One);
+          await experiPie.setCap(constants.MaxUint256);
+
+          const fee2percent = ethers.BigNumber.from("10").pow(16).mul(2)
+          await experiPie.setAnnualizedFee(fee2percent)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+        });
+        it("outStandingAnnualizedFee, fee ticks on charge is called", async() => {
+          let tx = await experiPie.setFeeBeneficiary(constants.AddressZero)
+          let timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(0)
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365])
+
+          tx = await experiPie.chargeOutstandingAnnualizedFee()
+          timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
+
+          // zero because no beneficiary
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(0)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+          // only fee for 1 year
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(parseEther("2"))
+        })
+        it("outStandingAnnualizedFee, 2 years", async() => {
+          // year 1
+          const balanceY1 = parseEther("2")
+          let tx = await experiPie.chargeOutstandingAnnualizedFee()
+          let timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
+          tx = await experiPie.chargeOutstandingAnnualizedFee()
+          timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.eq(balanceY1)
+          // year 2 (compounding, original balance + new fee + fee on previous fee)
+          const balanceY2 = balanceY1.add(parseEther("2")).add(parseEther("2").div(100).mul(2));
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
+          await experiPie.chargeOutstandingAnnualizedFee()
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.eq(balanceY2)
+        })
+      })
+      describe("Fee setters", async () => {
         it("setEntryFee", async() => {
           const fee = ethers.BigNumber.from("10").pow(17)
           await experiPie.setEntryFee(fee)
@@ -406,11 +456,11 @@ describe("BasketFacet", function() {
           expect(await experiPie.getFeeBeneficiary()).to.be.eq(await signers[1].getAddress());
         });
         it("setFeeBeneficiary, zero address", async() => {
-          await experiPie.setFeeBeneficiary(ZERO_ADDRESS)
-          expect(await experiPie.getFeeBeneficiary()).to.be.eq(ZERO_ADDRESS);
+          await experiPie.setFeeBeneficiary(constants.AddressZero)
+          expect(await experiPie.getFeeBeneficiary()).to.be.eq(constants.AddressZero);
         });
         it("setFeeBeneficiary, not allowed", async() => {
-          await expect(experiPie.connect(signers[1]).setFeeBeneficiary(ZERO_ADDRESS)).to.be.revertedWith("NOT_ALLOWED")
+          await expect(experiPie.connect(signers[1]).setFeeBeneficiary(constants.AddressZero)).to.be.revertedWith("NOT_ALLOWED")
         });
         it("setEntryFeeBeneficiaryShare", async() => {
           const fee = ethers.BigNumber.from("10").pow(18)

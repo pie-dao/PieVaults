@@ -189,7 +189,6 @@ describe("BasketFacet", function() {
         });
         it("Join pool", async () => {
           const mintAmount = parseEther("1");
-
           const totalSupplyBefore = await experiPie.totalSupply();
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
@@ -215,6 +214,73 @@ describe("BasketFacet", function() {
           expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.add(expectedTokenAmount));
           expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.add(expectedTokenAmount));
 
+        });
+        it("Join pool with fee", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          await experiPie.setEntryFee(fee)
+
+          const mintAmount = parseEther("1");
+          const feeAmount = parseEther("0.04") // 4 %
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+
+          await experiPie.joinPool(mintAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount.add(feeAmount)).div(totalSupplyBefore);
+
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.sub(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.add(mintAmount));
+
+          // Verify pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.add(expectedTokenAmount));
+        });
+        it("Join pool with fee and beneficiary", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          const beneficiaryFee = ethers.BigNumber.from("10").pow(16).mul(50) // 50%
+          await experiPie.setEntryFee(fee)
+          await experiPie.setEntryFeeBeneficiaryShare(beneficiaryFee)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+
+          const mintAmount = parseEther("1");
+          const feeAmount = parseEther("0.04") // 4 %
+          const beneficiaryShare = mintAmount.div(100).mul(2) // 2%
+
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+
+          await experiPie.joinPool(mintAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount.add(feeAmount)).div(totalSupplyBefore);
+
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount).add(beneficiaryShare));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.sub(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.add(mintAmount));
+
+          // Verify pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.add(expectedTokenAmount));
         });
         it("Exit pool", async () => {
           const burnAmount = parseEther("5");
@@ -359,7 +425,7 @@ describe("BasketFacet", function() {
           await expect(experiPie.removeToken(constants.AddressZero)).to.be.revertedWith("TOKEN_NOT_IN_POOL");
         });
       });
-      describe.only("AnnualizedFee", async () => {
+      describe("AnnualizedFee", async () => {
         beforeEach(async() => {
           for(let token of testTokens) {
             await token.approve(experiPie.address, constants.MaxUint256);

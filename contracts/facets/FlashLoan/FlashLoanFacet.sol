@@ -16,12 +16,15 @@ contract FlashLoanFacet is ReentryProtection, CallProtection {
 
     uint256 public constant MAX_FLASH_LOAN_FEE = 10**17;
 
-    function flashLoan(address _receiver, address _token, uint256 _amount, bytes calldata _params) external noReentry virtual {
+    function flashLoan(address _receiver, address _token, uint256 _amount, bytes calldata _params) external virtual noReentry {
+        return _flashLoan(_receiver, _token, _amount, _params);
+    }
+
+    function _flashLoan(address _receiver, address _token, uint256 _amount, bytes memory _params) internal {
         LibFlashLoanStorage.FlashLoanStorage storage fls = LibFlashLoanStorage.flashLoanStorage();
         IERC20 token = IERC20(_token);
 
         uint256 feeAmount = _amount.mul(fls.fee).div(10**18);
-
         uint256 balanceBefore = token.balanceOf(address(this));
         // transfer tokens to receiver
         // TODO figure out why safeTransfer is not available on token
@@ -31,7 +34,7 @@ contract FlashLoanFacet is ReentryProtection, CallProtection {
         IFlashLoanReceiver(_receiver).executeOperation(_token, _amount, feeAmount, _params);
         uint256 balanceAfter = token.balanceOf(address(this));
 
-        require(balanceAfter >= balanceBefore.add(feeAmount));
+        require(balanceAfter >= balanceBefore.add(feeAmount), "LOAN_NOT_REPAID");
 
         // if there is a fee benificary and possibly a fee to pay out
         if(fls.feeBeneficiary != address(0) && fls.feeBeneficiaryShare != 0 && feeAmount != 0) {

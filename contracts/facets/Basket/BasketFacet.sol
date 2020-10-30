@@ -156,7 +156,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
             bs.exitFeeBeneficiaryShare != 0 &&
             bs.feeBeneficiary != address(0)
         ) {
-            uint256 feeBeneficiaryShare = feeAmount.mul(bs.entryFeeBeneficiaryShare).div(10**18);
+            uint256 feeBeneficiaryShare = feeAmount.mul(bs.exitFeeBeneficiaryShare).div(10**18);
             if(feeBeneficiaryShare != 0) {
                 LibERC20.mint(bs.feeBeneficiary, feeBeneficiaryShare);
             }

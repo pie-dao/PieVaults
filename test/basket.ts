@@ -260,12 +260,14 @@ describe("BasketFacet", function() {
           const totalSupplyBefore = await experiPie.totalSupply();
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
+          const beneficiaryBefore = await getBalances(await signers[1].getAddress());
 
           await experiPie.joinPool(mintAmount);
 
           const totalSupplyAfter = await experiPie.totalSupply();
           const userBalancesAfter = await getBalances(account);
           const pieBalancesAfter = await getBalances(experiPie.address);
+          const beneficiaryAfter = await getBalances(await signers[1].getAddress());
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount.add(feeAmount)).div(totalSupplyBefore);
 
@@ -281,6 +283,12 @@ describe("BasketFacet", function() {
           expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.add(expectedTokenAmount));
           expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.add(expectedTokenAmount));
           expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.add(expectedTokenAmount));
+
+          // Verfiy beneficiary balances
+          expect(beneficiaryAfter.t0).to.eq(beneficiaryBefore.t0);
+          expect(beneficiaryAfter.t1).to.eq(beneficiaryBefore.t1);
+          expect(beneficiaryAfter.t2).to.eq(beneficiaryBefore.t2);
+          expect(beneficiaryAfter.pie).to.eq(beneficiaryBefore.pie.add(beneficiaryShare));
         });
         it("Exit pool", async () => {
           const burnAmount = parseEther("5");
@@ -310,6 +318,83 @@ describe("BasketFacet", function() {
           expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.sub(expectedTokenAmount));
           expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.sub(expectedTokenAmount));
           expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.sub(expectedTokenAmount));
+
+        });
+        it("Exit pool with fee", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          await experiPie.setExitFee(fee)
+
+          const burnAmount = parseEther("5");
+          const feeAmount = parseEther("0.20") // 4 %
+
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+
+          await experiPie.exitPool(burnAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount.sub(feeAmount)).div(totalSupplyBefore);
+
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.add(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.add(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.add(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.sub(burnAmount));
+
+          // Verify Pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.sub(expectedTokenAmount));
+
+        });
+        it("Exit pool with fee and beneficiary", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          const beneficiaryFee = ethers.BigNumber.from("10").pow(16).mul(50) // 50%
+          await experiPie.setExitFee(fee)
+          await experiPie.setExitFeeBeneficiaryShare(beneficiaryFee)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+
+          const burnAmount = parseEther("5");
+          const feeAmount = parseEther("0.20") // 4 %
+          const beneficiaryShare = burnAmount.div(100).mul(2) // 2%
+
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+          const beneficiaryBefore = await getBalances(await signers[1].getAddress());
+
+          await experiPie.exitPool(burnAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+          const beneficiaryAfter = await getBalances(await signers[1].getAddress());
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount.sub(feeAmount)).div(totalSupplyBefore);
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount).add(beneficiaryShare));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.add(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.add(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.add(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.sub(burnAmount));
+
+          // Verify Pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.sub(expectedTokenAmount));
+
+          // Verify beneficiary balances
+          expect(beneficiaryAfter.t0).to.eq(beneficiaryBefore.t0);
+          expect(beneficiaryAfter.t1).to.eq(beneficiaryBefore.t1);
+          expect(beneficiaryAfter.t2).to.eq(beneficiaryBefore.t2);
+          expect(beneficiaryAfter.pie).to.eq(beneficiaryBefore.pie.add(beneficiaryShare));
 
         });
         it("Join fails if it exceeds balance", async () => {

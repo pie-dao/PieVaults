@@ -17,7 +17,11 @@ contract PieFactoryContract is Ownable {
 
     IDiamondCut.FacetCut[] public defaultCut;
 
-    event PieCreated(address indexed pieAddress, address indexed deployer, uint256 indexed index);
+    event PieCreated(
+        address indexed pieAddress,
+        address indexed deployer,
+        uint256 indexed index
+    );
 
     function setDefaultController(address _controller) external onlyOwner {
         defaultController = _controller;
@@ -49,12 +53,12 @@ contract PieFactoryContract is Ownable {
         require(_tokens.length == _amounts.length, "ARRAY_LENGTH_MISMATCH");
 
         IExperiPie pie = IExperiPie(address(d));
-        
+
         // Init erc20 facet
         pie.initialize(_initialSupply, _name, _symbol, 18);
 
         // Transfer and add tokens
-        for(uint256 i = 0; i < _tokens.length; i ++) {
+        for (uint256 i = 0; i < _tokens.length; i++) {
             IERC20 token = IERC20(_tokens[i]);
             token.safeTransferFrom(msg.sender, address(pie), _amounts[i]);
             pie.addToken(_tokens[i]);
@@ -73,12 +77,15 @@ contract PieFactoryContract is Ownable {
         emit PieCreated(address(d), msg.sender, pies.length - 1);
     }
 
-    function getDefaultCut() external view returns (IDiamondCut.FacetCut[] memory) {
+    function getDefaultCut()
+        external
+        view
+        returns (IDiamondCut.FacetCut[] memory)
+    {
         return defaultCut;
     }
 
     function getDefaultCutCount() external view returns (uint256) {
         return defaultCut.length;
     }
-
 }

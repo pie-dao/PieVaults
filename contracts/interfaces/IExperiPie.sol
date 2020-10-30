@@ -31,9 +31,13 @@ interface IExperiPie is IERC20 {
     function getTokenInPool(address _token) external view returns (bool);
 
     function mint(address _receiver, uint256 _amount) external;
+
     function burn(address _from, uint256 _amount) external;
 
-    function calcTokensForAmount(uint256 _amount) external view returns (address[] memory tokens, uint256[] memory amounts);
+    function calcTokensForAmount(uint256 _amount)
+        external
+        view
+        returns (address[] memory tokens, uint256[] memory amounts);
 
     // CallFacet
     function call(
@@ -43,19 +47,24 @@ interface IExperiPie is IERC20 {
     ) external;
 
     function addCaller(address _caller) external;
+
     function removeCaller(address _caller) external;
 
     function canCall(address _caller) external view returns (bool);
+
     function getCallers() external view returns (address[] memory);
 
     // Ownership
 
     function transferOwnership(address _newOwner) external;
-    function owner() external view returns(address);
+
+    function owner() external view returns (address);
 
     // ERC20
     function name() external view returns (string memory);
+
     function symbol() external view returns (string memory);
+
     function decimals() external view returns (uint8);
 
     // ERC20 facet

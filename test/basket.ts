@@ -193,6 +193,7 @@ describe("BasketFacet", function() {
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
 
+          const calcTokenFor = await experiPie.calcTokensForAmount(mintAmount);
           await experiPie.joinPool(mintAmount);
 
           const totalSupplyAfter = await experiPie.totalSupply();
@@ -200,6 +201,9 @@ describe("BasketFacet", function() {
           const pieBalancesAfter = await getBalances(experiPie.address);
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
 
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount));
 
@@ -225,6 +229,7 @@ describe("BasketFacet", function() {
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
 
+          const calcTokenFor = await experiPie.calcTokensForAmount(mintAmount);
           await experiPie.joinPool(mintAmount);
 
           const totalSupplyAfter = await experiPie.totalSupply();
@@ -232,6 +237,9 @@ describe("BasketFacet", function() {
           const pieBalancesAfter = await getBalances(experiPie.address);
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount.add(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
 
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount));
 
@@ -262,6 +270,7 @@ describe("BasketFacet", function() {
           const pieBalancesBefore = await getBalances(experiPie.address);
           const beneficiaryBefore = await getBalances(await signers[1].getAddress());
 
+          const calcTokenFor = await experiPie.calcTokensForAmount(mintAmount);
           await experiPie.joinPool(mintAmount);
 
           const totalSupplyAfter = await experiPie.totalSupply();
@@ -270,6 +279,9 @@ describe("BasketFacet", function() {
           const beneficiaryAfter = await getBalances(await signers[1].getAddress());
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount.add(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
 
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount).add(beneficiaryShare));
 
@@ -293,10 +305,10 @@ describe("BasketFacet", function() {
         it("Exit pool", async () => {
           const burnAmount = parseEther("5");
 
-
           const totalSupplyBefore = await experiPie.totalSupply();
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
+          const calcTokenFor = await experiPie.calcTokensForAmountExit(burnAmount)
 
           await experiPie.exitPool(burnAmount);
 
@@ -305,6 +317,9 @@ describe("BasketFacet", function() {
           const pieBalancesAfter = await getBalances(experiPie.address);
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
 
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount));
 
@@ -330,6 +345,7 @@ describe("BasketFacet", function() {
           const totalSupplyBefore = await experiPie.totalSupply();
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
+          const calcTokenFor = await experiPie.calcTokensForAmountExit(burnAmount)
 
           await experiPie.exitPool(burnAmount);
 
@@ -338,6 +354,9 @@ describe("BasketFacet", function() {
           const pieBalancesAfter = await getBalances(experiPie.address);
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount.sub(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
 
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount));
 
@@ -368,6 +387,7 @@ describe("BasketFacet", function() {
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
           const beneficiaryBefore = await getBalances(await signers[1].getAddress());
+          const calcTokenFor = await experiPie.calcTokensForAmountExit(burnAmount)
 
           await experiPie.exitPool(burnAmount);
 
@@ -377,6 +397,9 @@ describe("BasketFacet", function() {
           const beneficiaryAfter = await getBalances(await signers[1].getAddress());
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount.sub(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount).add(beneficiaryShare));
 
           // Verify user balances

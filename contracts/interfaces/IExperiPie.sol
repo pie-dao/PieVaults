@@ -61,6 +61,11 @@ interface IExperiPie is IERC20 {
         view
         returns (address[] memory tokens, uint256[] memory amounts);
 
+    function calcTokensForAmountExit(uint256 _amount)
+        external
+        view
+        returns (address[] memory tokens, uint256[] memory amounts);
+
     // CallFacet
     function call(
         address[] memory _targets,

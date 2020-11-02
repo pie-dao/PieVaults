@@ -51,7 +51,7 @@ contract PieFactoryContract is Ownable {
         IExperiPie pie = IExperiPie(address(d));
         
         // Init erc20 facet
-        pie.initialize(_initialSupply, _name, _symbol, 18);
+        pie.initialize(_initialSupply, _name, _symbol);
 
         // Transfer and add tokens
         for(uint256 i = 0; i < _tokens.length; i ++) {

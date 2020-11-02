@@ -10,7 +10,8 @@
     "test:fast": "TS_NODE_TRANSPILE_ONLY=1 npx buidler test",
     "compile": "npx buidler compile --config buidler.compile.config.ts",
     "typechain": "typechain --target ethers-v5 --outDir typechain ./artifacts/**/*.json",
-    "build": "yarn compile --force && yarn typechain"
+    "build": "yarn compile --force && yarn typechain",
+    "remix": "remixd -s . --remix-ide https://remix.ethereum.org"
   },
   "author": "",
   "license": "ISC",

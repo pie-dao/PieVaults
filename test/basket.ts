@@ -163,7 +163,7 @@ describe("BasketFacet", function() {
             await experiPie.addToken(token.address);
           }
 
-          await experiPie.initialize(parseEther("100"), "TEST", "TEST", 18);
+          await experiPie.initialize(parseEther("100"), "TEST", "TEST");
           await experiPie.setLock(constants.One);
           await experiPie.setCap(constants.MaxUint256);
         });

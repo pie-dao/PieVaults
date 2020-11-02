@@ -16,8 +16,7 @@ contract ERC20Facet is IERC20, CallProtection {
   function initialize(
     uint256 _initialSupply,
     string memory _name,
-    string memory _symbol,
-    uint8 _decimals
+    string memory _symbol
   ) external {
     LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
@@ -28,7 +27,6 @@ contract ERC20Facet is IERC20, CallProtection {
 
     es.name = _name;
     es.symbol = _symbol;
-    es.decimals = _decimals;
   }
 
   function name() external view returns (string memory) {
@@ -39,8 +37,8 @@ contract ERC20Facet is IERC20, CallProtection {
     return LibERC20Storage.erc20Storage().symbol;
   }
 
-  function decimals() external view returns (uint8) {
-    return LibERC20Storage.erc20Storage().decimals;
+  function decimals() external pure returns (uint8) {
+    return 18;
   }
 
   function mint(address _receiver, uint256 _amount) protectedCall external {

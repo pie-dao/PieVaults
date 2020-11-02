@@ -64,7 +64,7 @@ describe("ERC20Facet", function() {
 
         const experiPieAddress = await diamondFactory.diamonds(0);
         experiPie = IExperiPieFactory.connect(experiPieAddress, signers[0]);
-        await experiPie.initialize(0, NAME, SYMBOL, 18);
+        await experiPie.initialize(0, NAME, SYMBOL);
 
         await timeTraveler.snapshot();
     });

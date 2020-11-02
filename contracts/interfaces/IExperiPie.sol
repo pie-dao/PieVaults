@@ -62,7 +62,6 @@ interface IExperiPie is IERC20 {
     function initialize(
         uint256 _initialSupply,
         string memory _name,
-        string memory _symbol,
-        uint8 _decimals
+        string memory _symbol
     ) external;
 }

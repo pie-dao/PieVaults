@@ -20,7 +20,6 @@ const FacetCutAction = {
     Remove: 2,
 };
 
-
 function getSelectors(contract: Contract) {
     const signatures: BytesLike[] = [];
     for(const key of Object.keys(contract.functions)) {
@@ -45,7 +44,7 @@ describe("BasketFacet", function() {
         timeTraveler = new TimeTraveler(ethereum);
 
         const diamondFactory = (await run("deploy-diamond-factory")) as DiamondFactoryContract;
-        
+
         const basketFacet = (await deployContract(signers[0], BasketFacetArtifact)) as BasketFacet;
         const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact)) as Erc20Facet;
 
@@ -94,7 +93,7 @@ describe("BasketFacet", function() {
             experiPieAltSigner
               .setCap(parseEther("1000"))
           ).to.be.revertedWith("NOT_ALLOWED");
-          
+
         });
         it("Set max cap", async () => {
           await experiPie.setCap(parseEther("100"));
@@ -117,7 +116,7 @@ describe("BasketFacet", function() {
         it("Check past lock", async () => {
           // set blockNumber to at least 2
           await timeTraveler.mine_blocks(2);
-    
+
           // set lock in the past
           await experiPie.setLock(1);
           const lock = await experiPie.getLock();
@@ -136,7 +135,7 @@ describe("BasketFacet", function() {
           await experiPie.setLock(latestBlock + 1);
           const lockBlock = await experiPie.getLockBlock();
           expect(lockBlock).to.eq(latestBlock + 1);
-    
+
           // should still be locked (block is including)
           const lock = await experiPie.getLock();
           expect(lock).to.be.true;
@@ -183,26 +182,29 @@ describe("BasketFacet", function() {
           await expect(
             experiPie.joinPool(parseEther("1"))
           ).to.be.revertedWith("POOL_LOCKED");
-    
+
           await expect(
             experiPie.exitPool(parseEther("1"))
           ).to.be.revertedWith("POOL_LOCKED");
         });
         it("Join pool", async () => {
           const mintAmount = parseEther("1");
-
           const totalSupplyBefore = await experiPie.totalSupply();
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
-          
+
+          const calcTokenFor = await experiPie.calcTokensForAmount(mintAmount);
           await experiPie.joinPool(mintAmount);
-          
+
           const totalSupplyAfter = await experiPie.totalSupply();
           const userBalancesAfter = await getBalances(account);
           const pieBalancesAfter = await getBalances(experiPie.address);
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount).div(totalSupplyBefore);
-          
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
+
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount));
 
           // Verify user balances
@@ -210,21 +212,104 @@ describe("BasketFacet", function() {
           expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.sub(expectedTokenAmount));
           expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.sub(expectedTokenAmount));
           expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.add(mintAmount));
-          
+
           // Verify pie balances
           expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.add(expectedTokenAmount));
           expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.add(expectedTokenAmount));
           expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.add(expectedTokenAmount));
 
         });
-        it("Exit pool", async () => {
-          const burnAmount = parseEther("5");
-          
+        it("Join pool with fee", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          await experiPie.setEntryFee(fee)
+
+          const mintAmount = parseEther("1");
+          const feeAmount = parseEther("0.04") // 4 %
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+
+          const calcTokenFor = await experiPie.calcTokensForAmount(mintAmount);
+          await experiPie.joinPool(mintAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount.add(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
+
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.sub(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.add(mintAmount));
+
+          // Verify pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.add(expectedTokenAmount));
+        });
+        it("Join pool with fee and beneficiary", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          const beneficiaryFee = ethers.BigNumber.from("10").pow(16).mul(50) // 50%
+          await experiPie.setEntryFee(fee)
+          await experiPie.setEntryFeeBeneficiaryShare(beneficiaryFee)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+
+          const mintAmount = parseEther("1");
+          const feeAmount = parseEther("0.04") // 4 %
+          const beneficiaryShare = mintAmount.div(100).mul(2) // 2%
 
           const totalSupplyBefore = await experiPie.totalSupply();
           const userBalancesBefore = await getBalances(account);
           const pieBalancesBefore = await getBalances(experiPie.address);
-          
+          const beneficiaryBefore = await getBalances(await signers[1].getAddress());
+
+          const calcTokenFor = await experiPie.calcTokensForAmount(mintAmount);
+          await experiPie.joinPool(mintAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+          const beneficiaryAfter = await getBalances(await signers[1].getAddress());
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(mintAmount.add(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
+
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.add(mintAmount).add(beneficiaryShare));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.sub(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.add(mintAmount));
+
+          // Verify pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.add(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.add(expectedTokenAmount));
+
+          // Verfiy beneficiary balances
+          expect(beneficiaryAfter.t0).to.eq(beneficiaryBefore.t0);
+          expect(beneficiaryAfter.t1).to.eq(beneficiaryBefore.t1);
+          expect(beneficiaryAfter.t2).to.eq(beneficiaryBefore.t2);
+          expect(beneficiaryAfter.pie).to.eq(beneficiaryBefore.pie.add(beneficiaryShare));
+        });
+        it("Exit pool", async () => {
+          const burnAmount = parseEther("5");
+
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+          const calcTokenFor = await experiPie.calcTokensForAmountExit(burnAmount)
+
           await experiPie.exitPool(burnAmount);
 
           const totalSupplyAfter = await experiPie.totalSupply();
@@ -232,7 +317,10 @@ describe("BasketFacet", function() {
           const pieBalancesAfter = await getBalances(experiPie.address);
 
           const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount).div(totalSupplyBefore);
-          
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
+
           expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount));
 
           // Verify user balances
@@ -245,7 +333,92 @@ describe("BasketFacet", function() {
           expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.sub(expectedTokenAmount));
           expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.sub(expectedTokenAmount));
           expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.sub(expectedTokenAmount));
-          
+
+        });
+        it("Exit pool with fee", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          await experiPie.setExitFee(fee)
+
+          const burnAmount = parseEther("5");
+          const feeAmount = parseEther("0.20") // 4 %
+
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+          const calcTokenFor = await experiPie.calcTokensForAmountExit(burnAmount)
+
+          await experiPie.exitPool(burnAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount.sub(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
+
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.add(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.add(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.add(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.sub(burnAmount));
+
+          // Verify Pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.sub(expectedTokenAmount));
+
+        });
+        it("Exit pool with fee and beneficiary", async () => {
+          const fee = ethers.BigNumber.from("10").pow(16).mul(4) // 4%
+          const beneficiaryFee = ethers.BigNumber.from("10").pow(16).mul(50) // 50%
+          await experiPie.setExitFee(fee)
+          await experiPie.setExitFeeBeneficiaryShare(beneficiaryFee)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+
+          const burnAmount = parseEther("5");
+          const feeAmount = parseEther("0.20") // 4 %
+          const beneficiaryShare = burnAmount.div(100).mul(2) // 2%
+
+          const totalSupplyBefore = await experiPie.totalSupply();
+          const userBalancesBefore = await getBalances(account);
+          const pieBalancesBefore = await getBalances(experiPie.address);
+          const beneficiaryBefore = await getBalances(await signers[1].getAddress());
+          const calcTokenFor = await experiPie.calcTokensForAmountExit(burnAmount)
+
+          await experiPie.exitPool(burnAmount);
+
+          const totalSupplyAfter = await experiPie.totalSupply();
+          const userBalancesAfter = await getBalances(account);
+          const pieBalancesAfter = await getBalances(experiPie.address);
+          const beneficiaryAfter = await getBalances(await signers[1].getAddress());
+
+          const expectedTokenAmount = pieBalancesBefore.t0.mul(burnAmount.sub(feeAmount)).div(totalSupplyBefore);
+          calcTokenFor.amounts.forEach(amount => {
+            expect(amount).to.be.eq(expectedTokenAmount)
+          });
+          expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(burnAmount).add(beneficiaryShare));
+
+          // Verify user balances
+          expect(userBalancesAfter.t0).to.eq(userBalancesBefore.t0.add(expectedTokenAmount));
+          expect(userBalancesAfter.t1).to.eq(userBalancesBefore.t1.add(expectedTokenAmount));
+          expect(userBalancesAfter.t2).to.eq(userBalancesBefore.t2.add(expectedTokenAmount));
+          expect(userBalancesAfter.pie).to.eq(userBalancesBefore.pie.sub(burnAmount));
+
+          // Verify Pie balances
+          expect(pieBalancesAfter.t0).to.eq(pieBalancesBefore.t0.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t1).to.eq(pieBalancesBefore.t1.sub(expectedTokenAmount));
+          expect(pieBalancesAfter.t2).to.eq(pieBalancesBefore.t2.sub(expectedTokenAmount));
+
+          // Verify beneficiary balances
+          expect(beneficiaryAfter.t0).to.eq(beneficiaryBefore.t0);
+          expect(beneficiaryAfter.t1).to.eq(beneficiaryBefore.t1);
+          expect(beneficiaryAfter.t2).to.eq(beneficiaryBefore.t2);
+          expect(beneficiaryAfter.pie).to.eq(beneficiaryBefore.pie.add(beneficiaryShare));
+
         });
         it("Join fails if it exceeds balance", async () => {
           await expect(
@@ -263,7 +436,7 @@ describe("BasketFacet", function() {
           const experiPieAltSigner =  experiPie.connect(signers[1]);
 
           const account1 = await signers[1].getAddress();
-          
+
           const totalSupplyBefore = await experiPie.totalSupply();
           const user0BalancesBefore = await getBalances(account);
           const user1BalancesBefore = await getBalances(account1);
@@ -310,14 +483,14 @@ describe("BasketFacet", function() {
           const mintAmount = parseEther("10000");
 
           await experiPie.setCap(totalSupply.add(mintAmount).sub(1))
-    
+
           await expect(
             experiPie.joinPool(mintAmount)
           ).to.be.revertedWith("MAX_POOL_CAP_REACHED");
         });
         it("Adding a token", async() => {
           const addedToken = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;
-          
+
           const tokensBefore = await experiPie.getTokens();
 
           await addedToken.mint(parseEther("1000000"), account);
@@ -336,7 +509,7 @@ describe("BasketFacet", function() {
         });
         it("Adding a token with less than MIN_AMOUNT should fail", async() => {
           const addedToken = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;
-          await expect(experiPie.addToken(addedToken.address)).to.be.revertedWith("BALANCE_TOO_SMALL"); 
+          await expect(experiPie.addToken(addedToken.address)).to.be.revertedWith("BALANCE_TOO_SMALL");
         });
         it("Adding a token which is already in the pool should fail", async() => {
           await expect(experiPie.addToken(testTokens[0].address)).to.be.revertedWith("TOKEN_ALREADY_IN_POOL");
@@ -360,5 +533,135 @@ describe("BasketFacet", function() {
           await expect(experiPie.removeToken(constants.AddressZero)).to.be.revertedWith("TOKEN_NOT_IN_POOL");
         });
       });
+      describe("AnnualizedFee", async () => {
+        beforeEach(async() => {
+          for(let token of testTokens) {
+            await token.approve(experiPie.address, constants.MaxUint256);
+            await token.transfer(experiPie.address, parseEther("10000"));
+            const account1 = await signers[1].getAddress();
+            await token.mint(parseEther("10000"), account1);
+            token.connect(signers[1]).approve(experiPie.address, constants.MaxUint256);
+            await experiPie.addToken(token.address);
+          }
 
+          await experiPie.initialize(parseEther("100"), "TEST", "TEST", 18);
+          await experiPie.setLock(constants.One);
+          await experiPie.setCap(constants.MaxUint256);
+
+          const fee2percent = ethers.BigNumber.from("10").pow(16).mul(2)
+          await experiPie.setAnnualizedFee(fee2percent)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+        });
+        it("outStandingAnnualizedFee, fee ticks on charge is called", async() => {
+          let tx = await experiPie.setFeeBeneficiary(constants.AddressZero)
+          let timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(0)
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365])
+
+          tx = await experiPie.chargeOutstandingAnnualizedFee()
+          timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
+
+          // zero because no beneficiary
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(0)
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+          // only fee for 1 year
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(parseEther("2"))
+        })
+        it("outStandingAnnualizedFee, 2 years", async() => {
+          // year 1
+          const balanceY1 = parseEther("2")
+          let tx = await experiPie.chargeOutstandingAnnualizedFee()
+          let timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
+          tx = await experiPie.chargeOutstandingAnnualizedFee()
+          timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.eq(balanceY1)
+          // year 2 (compounding, original balance + new fee + fee on previous fee)
+          const balanceY2 = balanceY1.add(parseEther("2")).add(parseEther("2").div(100).mul(2));
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
+          await experiPie.chargeOutstandingAnnualizedFee()
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.eq(balanceY2)
+        })
+      })
+      describe("Fee setters", async () => {
+        it("setEntryFee", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17)
+          await experiPie.setEntryFee(fee)
+          expect(await experiPie.getEntryFee()).to.be.eq(fee);
+        });
+        it("setEntryFee, exceed max", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17).add(1)
+          await expect(experiPie.setEntryFee(fee)).to.be.revertedWith("FEE_TOO_BIG")
+        });
+        it("setEntryFee, not allowed", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17)
+          await expect(experiPie.connect(signers[1]).setEntryFee(fee)).to.be.revertedWith("NOT_ALLOWED")
+        });
+        it("setExitFee", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17)
+          await experiPie.setExitFee(fee)
+          expect(await experiPie.getExitFee()).to.be.eq(fee);
+        });
+        it("setExitFee, exceed max", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17).add(1)
+          await expect(experiPie.setExitFee(fee)).to.be.revertedWith("FEE_TOO_BIG")
+        });
+        it("setExitFee, not allowed", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17)
+          await expect(experiPie.connect(signers[1]).setExitFee(fee)).to.be.revertedWith("NOT_ALLOWED")
+        });
+        it("setAnnualizedFee", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17)
+          await experiPie.setAnnualizedFee(fee)
+          expect(await experiPie.getAnnualizedFee()).to.be.eq(fee);
+        });
+        it("setAnnualizedFee, exceed max", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17).add(1)
+          await expect(experiPie.setAnnualizedFee(fee)).to.be.revertedWith("FEE_TOO_BIG")
+        });
+        it("setAnnualizedFee, not allowed", async() => {
+          const fee = ethers.BigNumber.from("10").pow(17)
+          await expect(experiPie.connect(signers[1]).setAnnualizedFee(fee)).to.be.revertedWith("NOT_ALLOWED")
+        });
+        it("setFeeBeneficiary", async() => {
+          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+          expect(await experiPie.getFeeBeneficiary()).to.be.eq(await signers[1].getAddress());
+        });
+        it("setFeeBeneficiary, zero address", async() => {
+          await experiPie.setFeeBeneficiary(constants.AddressZero)
+          expect(await experiPie.getFeeBeneficiary()).to.be.eq(constants.AddressZero);
+        });
+        it("setFeeBeneficiary, not allowed", async() => {
+          await expect(experiPie.connect(signers[1]).setFeeBeneficiary(constants.AddressZero)).to.be.revertedWith("NOT_ALLOWED")
+        });
+        it("setEntryFeeBeneficiaryShare", async() => {
+          const fee = ethers.BigNumber.from("10").pow(18)
+          await experiPie.setEntryFeeBeneficiaryShare(fee)
+          expect(await experiPie.getEntryFeeBeneficiaryShare()).to.be.eq(fee);
+        });
+        it("setEntryFeeBeneficiaryShare, exceed max", async() => {
+          const fee = ethers.BigNumber.from("10").pow(18).add(1)
+          await expect(experiPie.setEntryFeeBeneficiaryShare(fee)).to.be.revertedWith("FEE_SHARE_TOO_BIG")
+        });
+        it("setEntryFeeBeneficiaryShare, not allowed", async() => {
+          const fee = ethers.BigNumber.from("10").pow(18)
+          await expect(experiPie.connect(signers[1]).setEntryFeeBeneficiaryShare(fee)).to.be.revertedWith("NOT_ALLOWED")
+        });
+        it("setExitFeeBeneficiaryShare", async() => {
+          const fee = ethers.BigNumber.from("10").pow(18)
+          await experiPie.setExitFeeBeneficiaryShare(fee)
+          expect(await experiPie.getExitFeeBeneficiaryShare()).to.be.eq(fee);
+        });
+        it("setExitFeeBeneficiaryShare, exceed max", async() => {
+          const fee = ethers.BigNumber.from("10").pow(18).add(1)
+          await expect(experiPie.setExitFeeBeneficiaryShare(fee)).to.be.revertedWith("FEE_SHARE_TOO_BIG")
+        });
+        it("setExitFeeBeneficiaryShare, not allowed", async() => {
+          const fee = ethers.BigNumber.from("10").pow(18)
+          await expect(experiPie.connect(signers[1]).setExitFeeBeneficiaryShare(fee)).to.be.revertedWith("NOT_ALLOWED")
+        });
+
+      })
 })

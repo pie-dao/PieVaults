@@ -60,16 +60,48 @@ contract CallFacet is ReentryProtection {
     address[] memory _targets,
     bytes[] memory _calldata,
     uint256[] memory _values
-  ) external noReentry protectedCall {
+  ) public noReentry protectedCall {
     require(
       _targets.length == _calldata.length && _values.length == _calldata.length,
       "ARRAY_LENGTH_MISMATCH"
     );
 
     for (uint256 i = 0; i < _targets.length; i++) {
-      (bool success, ) = _targets[i].call{ value: _values[i] }(_calldata[i]);
-      require(success, "CALL_FAILED");
+      _call(_targets[i], _calldata[i], _values[i]);
     }
+  }
+
+  function callNoValue(
+    address[] memory _targets,
+    bytes[] memory _calldata,
+    uint256[] memory _values
+  ) public noReentry protectedCall {
+    require(
+      _targets.length == _calldata.length,
+      "ARRAY_LENGTH_MISMATCH"
+    );
+
+    for (uint256 i = 0; i < _targets.length; i++) {
+      _call(_targets[i], _calldata[i], 0);
+    }
+  }
+
+
+  function singleCall(
+    address _target,
+    bytes calldata _calldata,
+    uint256 _value
+  ) external noReentry protectedCall {
+    _call(_target, _calldata, _value);
+  }
+
+  function _call(
+    address _target,
+    bytes memory _calldata,
+    uint256 _value
+  ) internal {
+    (bool success, ) = _target.call{ value: _value }(_calldata);
+    require(success, "CALL_FAILED");
   }
 
   function canCall(address _caller) external view returns (bool) {

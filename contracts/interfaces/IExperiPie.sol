@@ -73,6 +73,17 @@ interface IExperiPie is IERC20 {
         uint256[] memory _values
     ) external;
 
+    function callNoValue(
+        address[] memory _targets,
+        bytes[] memory _calldata
+    ) external;
+
+    function singleCall(
+        address _target,
+        bytes calldata _calldata,
+        uint256 _value
+    ) external;
+
     function addCaller(address _caller) external;
 
     function removeCaller(address _caller) external;

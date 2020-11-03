@@ -4,8 +4,8 @@ pragma solidity ^0.7.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/math/Math.sol";
-import "../misc/LendingRegistry.sol";
-import "../interfaces/IExperiPie.sol";
+import "./LendingRegistry.sol";
+import "../../interfaces/IExperiPie.sol";
 
 contract LendingManager is Ownable {
     using Math for uint256;
@@ -85,5 +85,5 @@ contract LendingManager is Ownable {
         // add token
         basket.singleCall(address(basket), abi.encodeWithSelector(basket.addToken.selector, _token), 0);
     }
-
+ 
 }

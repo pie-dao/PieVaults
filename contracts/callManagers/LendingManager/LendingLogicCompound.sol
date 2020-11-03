@@ -3,16 +3,17 @@ pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.1;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "./ILendingLogic.sol";
-import "./IAToken.sol";
-import "./IAaveLendingPool.sol";
+import "../../interfaces/ILendingLogic.sol";
+import "./LendingRegistry.sol";
+import "../../interfaces/ICToken.sol";
 
-contract LendingLogicAave is ILendingLogic {
+contract LendingLogicCompound is ILendingLogic {
 
-    IAaveLendingPool public lendingPool;
+    LendingRegistry public lendingRegistry;
+    bytes32 public constant PROTOCOL = keccak256(abi.encodePacked("Compound"));
 
-    constructor(address _lendingPool) {
-        lendingPool = IAaveLendingPool(_lendingPool);
+    constructor(address _lendingRegistry) {
+        lendingRegistry = LendingRegistry(_lendingRegistry);
     }
 
     function lend(address _underlying, uint256 _amount) external override returns(address[] memory targets, bytes[] memory data) {
@@ -21,18 +22,21 @@ contract LendingLogicAave is ILendingLogic {
         targets = new address[](3);
         data = new bytes[](3);
 
+
+        address cToken = lendingRegistry.underlyingToProtocolWrapped(_underlying, PROTOCOL);
+
         // zero out approval to be sure
         targets[0] = _underlying;
-        data[0] = abi.encodeWithSelector(underlying.approve.selector, address(lendingPool), 0);
+        data[0] = abi.encodeWithSelector(underlying.approve.selector, cToken, 0);
 
         // Set approval
         targets[1] = _underlying;
-        data[1] = abi.encodeWithSelector(underlying.approve.selector, address(lendingPool), _amount);
+        data[1] = abi.encodeWithSelector(underlying.approve.selector, cToken, _amount);
 
         // Deposit into Aave
-        targets[2] = address(lendingPool);
+        targets[2] = cToken;
         // TODO set referral
-        data[2] =  abi.encodeWithSelector(lendingPool.deposit.selector, _underlying, _amount, 0);
+        data[2] =  abi.encodeWithSelector(ICToken.mint.selector, _amount, 0);
 
         return(targets, data);
     }
@@ -41,7 +45,7 @@ contract LendingLogicAave is ILendingLogic {
         data = new bytes[](1);
 
         targets[0] = _wrapped;
-        data[0] = abi.encodeWithSelector(IAToken.redeem.selector, _amount);
+        data[0] = abi.encodeWithSelector(ICToken.redeem.selector, _amount);
         
         return(targets, data);
     }

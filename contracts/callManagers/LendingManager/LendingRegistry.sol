@@ -4,7 +4,7 @@ pragma solidity ^0.7.1;
 
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./ILendingLogic.sol";
+import "../../interfaces/ILendingLogic.sol";
 
 contract LendingRegistry is Ownable {
 

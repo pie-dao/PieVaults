@@ -5,3 +5,9 @@ build
 artifacts/
 typechain/
 cache/
+.coverage/
+.coverage_artifacts/
+.coverage_contracts/
+coverage/
+.coverage_cache/
+coverage.json

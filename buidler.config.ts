@@ -21,6 +21,7 @@ import { IExperiPieFactory } from "./typechain/IExperiPieFactory";
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
 usePlugin("@nomiclabs/buidler-etherscan");
+usePlugin('solidity-coverage');
 
 function getSelectors(contract: Contract) {
   const signatures: BytesLike[] = [];
@@ -46,7 +47,9 @@ const config = {
       accounts: [process.env.PRIVATE_KEY]
     },
     coverage: {
-      url: 'http://localhost:8555'
+      url: 'http://127.0.0.1:8555', // Coverage launches its own ganache-cli client
+      gasPrice: 0,
+      blockGasLimit: 100000000,
     },
     frame: {
       url: "http://localhost:1248"

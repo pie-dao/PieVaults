@@ -6,6 +6,7 @@ pragma solidity ^0.7.1;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "../../interfaces/ILendingLogic.sol";
 
+// TODO consider making this contract upgradeable
 contract LendingRegistry is Ownable {
 
     // Maps wrapped token to protocol
@@ -17,6 +18,8 @@ contract LendingRegistry is Ownable {
 
     // Maps protocol to addresses containing lend and unlend logic
     mapping(bytes32 => address) public protocolToLogic;
+
+    // TODO events
 
     function setWrappedToProtocol(address _wrapped, bytes32 _protocol) onlyOwner external {
         wrappedToProtocol[_wrapped] = _protocol;
@@ -34,17 +37,17 @@ contract LendingRegistry is Ownable {
         underlyingToProtocolWrapped[_underlying][_protocol] = _wrapped;
     } 
 
-    function getLendTXData(address _underlying, uint256 _amount, bytes32 _protocol) external returns(address[] memory targets, bytes[] memory data) {
+    function getLendTXData(address _underlying, uint256 _amount, bytes32 _protocol) external view returns(address[] memory targets, bytes[] memory data) {
         ILendingLogic lendingLogic = ILendingLogic(protocolToLogic[_protocol]);
         require(address(lendingLogic) != address(0), "NO_LENDING_LOGIC_SET");
 
         return lendingLogic.lend(_underlying, _amount);
     }
 
-    function getUnlendTXData(address _wrapped, uint256 _amount) external returns(address[] memory targets, bytes[] memory data) {
+    function getUnlendTXData(address _wrapped, uint256 _amount) external view returns(address[] memory targets, bytes[] memory data) {
         ILendingLogic lendingLogic = ILendingLogic(protocolToLogic[wrappedToProtocol[_wrapped]]);
         require(address(lendingLogic) != address(0), "NO_LENDING_LOGIC_SET");
 
-        return lendingLogic.unlend(_wrapped, _amount); 
+        return lendingLogic.unlend(_wrapped, _amount);
     }
 }

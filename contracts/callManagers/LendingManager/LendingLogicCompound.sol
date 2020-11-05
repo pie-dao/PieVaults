@@ -16,7 +16,7 @@ contract LendingLogicCompound is ILendingLogic {
         lendingRegistry = LendingRegistry(_lendingRegistry);
     }
 
-    function lend(address _underlying, uint256 _amount) external override returns(address[] memory targets, bytes[] memory data) {
+    function lend(address _underlying, uint256 _amount) external view override returns(address[] memory targets, bytes[] memory data) {
         IERC20 underlying = IERC20(_underlying);
 
         targets = new address[](3);
@@ -40,7 +40,7 @@ contract LendingLogicCompound is ILendingLogic {
 
         return(targets, data);
     }
-    function unlend(address _wrapped, uint256 _amount) external override returns(address[] memory targets, bytes[] memory data) {
+    function unlend(address _wrapped, uint256 _amount) external view override returns(address[] memory targets, bytes[] memory data) {
         targets = new address[](1);
         data = new bytes[](1);
 

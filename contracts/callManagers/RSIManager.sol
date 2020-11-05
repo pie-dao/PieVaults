@@ -2,6 +2,7 @@
 pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.1;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "../interfaces/ISynthetix.sol";
 import "../interfaces/IExperiPie.sol";
 import "../interfaces/IPriceReferenceFeed.sol";
@@ -24,6 +25,8 @@ contract RSISynthetixManager {
         uint256 updatedAt; 
         uint80 answeredInRound;
     }
+
+    event Rebalanced(address indexed basket, address indexed fromToken, address indexed toToken);
 
     constructor(
         address _assetShort,
@@ -51,9 +54,11 @@ contract RSISynthetixManager {
         if(roundData.answer <= 30 * 10**18) {
             // long
             long();
+            return;
         } else if(roundData.answer >= 70 * 10**18) {
             // Short
             short();
+            return;
         }
     }
 
@@ -87,6 +92,12 @@ contract RSISynthetixManager {
 
         // Do calls
         basket.call(targets, data, values);
+
+        // sanity checks
+        require(currentToken.balanceOf(address(basket)) == 0, "Current token balance should be zero");
+        require(IERC20(assetLong).balanceOf(address(basket)) >= 10**6, "Amount too small");
+
+        emit Rebalanced(address(basket), assetShort, assetLong);
     }
 
     function short() internal {
@@ -108,7 +119,6 @@ contract RSISynthetixManager {
         targets[1] = address(synthetix);
         data[1] = abi.encodeWithSelector(synthetix.exchange.selector, assetLongKey, currentTokenBalance, assetShortKey);
 
-
         // Remove current token
         targets[2] = address(basket);
         data[2] = abi.encodeWithSelector(basket.removeToken.selector, assetLong);
@@ -119,6 +129,14 @@ contract RSISynthetixManager {
 
         // Do calls
         basket.call(targets, data, values);
+
+        // sanity checks
+        require(currentToken.balanceOf(address(basket)) == 0, "Current token balance should be zero");
+        
+        // Catched by addToken in the basket itself
+        // require(IERC20(assetShort).balanceOf(address(basket)) >= 10**6, "Amount too small");
+
+        emit Rebalanced(address(basket), assetShort, assetLong);
     }
 
     function getCurrentToken() public view returns(address) {

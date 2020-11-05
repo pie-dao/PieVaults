@@ -11,8 +11,8 @@ import DiamondLoupeFacetArtifact from "../artifacts/DiamondLoupeFacet.json";
 import OwnershipFacetArtifact from "../artifacts/OwnershipFacet.json";
 
 import PieFactoryContractArtifact from "../artifacts/PieFactoryContract.json";
-import TestTokenArtifact from "../artifacts/TestToken.json";
-import { Erc20Facet, BasketFacet, CallFacet, DiamondFactoryContract, TestToken, DiamondCutFacet, DiamondLoupeFacet, OwnershipFacet, PieFactoryContract } from "../typechain";
+import MockTokenArtifact from "../artifacts/MockToken.json";
+import { Erc20Facet, BasketFacet, CallFacet, DiamondFactoryContract, MockToken, DiamondCutFacet, DiamondLoupeFacet, OwnershipFacet, PieFactoryContract } from "../typechain";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
 import { parseEther } from "ethers/lib/utils";
@@ -39,14 +39,14 @@ function getSelectors(contract: Contract) {
 }
 
 describe("PieFactoryContract", function() {
-    this.timeout(300000);
+    this.timeout(300000000);
 
     let pieFactory: PieFactoryContract;
     let account: string;
     let signers: Signer[];
     let timeTraveler: TimeTraveler;
     let diamondCut: any[];
-    const testTokens: TestToken[] = [];
+    const testTokens: MockToken[] = [];
 
     before(async() => {
         signers = await ethers.getSigners();
@@ -103,7 +103,7 @@ describe("PieFactoryContract", function() {
         await pieFactory.setDefaultController(account);
 
         for(let i = 0; i < 3; i ++) {
-          const token = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;
+          const token = await (deployContract(signers[0], MockTokenArtifact, ["Mock", "Mock"])) as MockToken;
           await token.mint(parseEther("1000000"), account);
           await token.approve(pieFactory.address, constants.MaxUint256);
           testTokens.push(token);

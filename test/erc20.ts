@@ -5,7 +5,7 @@ import { Signer, constants, BigNumber, utils, Contract, BytesLike } from "ethers
 
 import BasketFacetArtifact from "../artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "../artifacts/ERC20Facet.json";
-import { Erc20Facet, BasketFacet, DiamondFactoryContract, TestToken } from "../typechain";
+import { Erc20Facet, BasketFacet, DiamondFactoryContract } from "../typechain";
 import {IExperiPieFactory} from "../typechain/IExperiPieFactory";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
@@ -31,7 +31,7 @@ const NAME = "TEST POOL";
 const SYMBOL = "TPL";
 
 describe("ERC20Facet", function() {
-    this.timeout(300000);
+    this.timeout(300000000);
 
     let experiPie: IExperiPie;
     let account: string;

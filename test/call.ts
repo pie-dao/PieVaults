@@ -6,8 +6,8 @@ import { Signer, constants, BigNumber, utils, Contract, BytesLike } from "ethers
 import BasketFacetArtifact from "../artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "../artifacts/ERC20Facet.json";
 import CallFacetArtifact from "../artifacts/CallFacet.json";
-import TestTokenArtifact from "../artifacts/TestToken.json";
-import { Erc20Facet, BasketFacet, CallFacet, DiamondFactoryContract, TestToken } from "../typechain";
+import MockTokenArtifact from "../artifacts/MockToken.json";
+import { Erc20Facet, BasketFacet, CallFacet, DiamondFactoryContract, MockToken } from "../typechain";
 import {IExperiPieFactory} from "../typechain/IExperiPieFactory";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
@@ -32,13 +32,13 @@ function getSelectors(contract: Contract) {
 }
 
 describe("CallFacet", function() {
-    this.timeout(300000);
+    this.timeout(300000000);
 
     let experiPie: IExperiPie;
     let account: string;
     let signers: Signer[];
     let timeTraveler: TimeTraveler;
-    const testTokens: TestToken[] = [];
+    const testTokens: MockToken[] = [];
 
     before(async() => {
         signers = await ethers.getSigners();
@@ -76,7 +76,7 @@ describe("CallFacet", function() {
         experiPie = IExperiPieFactory.connect(experiPieAddress, signers[0]);
 
         for(let i = 0; i < 3; i ++) {
-          const token = await (deployContract(signers[0], TestTokenArtifact, ["Mock", "Mock"])) as TestToken;
+          const token = await (deployContract(signers[0], MockTokenArtifact, ["Mock", "Mock"])) as MockToken;
           await token.mint(parseEther("1000000"), account);
           testTokens.push(token);
         }

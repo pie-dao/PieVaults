@@ -73,8 +73,7 @@ contract CallFacet is ReentryProtection {
 
   function callNoValue(
     address[] memory _targets,
-    bytes[] memory _calldata,
-    uint256[] memory _values
+    bytes[] memory _calldata
   ) public noReentry protectedCall {
     require(
       _targets.length == _calldata.length,

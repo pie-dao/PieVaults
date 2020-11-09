@@ -19,7 +19,7 @@ const PLACEHOLDER_3 = "0x0000000000000000000000000000000000000003";
 
 const PLACEHOLDER_PROTOCOL = formatBytes32String("PROTOCOL");
 
-describe.only("LendingRegistry", function() {
+describe("LendingRegistry", function() {
     this.timeout(300000000);
 
     let account: string;
@@ -87,7 +87,7 @@ describe.only("LendingRegistry", function() {
         });
     });
 
-    describe.only("Getting tx data", async() => {
+    describe("Getting tx data", async() => {
         beforeEach(async() => {
             await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, mockLendingLogic.address);
             await lendingRegistry.setWrappedToProtocol(PLACEHOLDER_1, PLACEHOLDER_PROTOCOL);

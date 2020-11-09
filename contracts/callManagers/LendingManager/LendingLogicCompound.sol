@@ -33,10 +33,10 @@ contract LendingLogicCompound is ILendingLogic {
         targets[1] = _underlying;
         data[1] = abi.encodeWithSelector(underlying.approve.selector, cToken, _amount);
 
-        // Deposit into Aave
+        // Deposit into Compound
         targets[2] = cToken;
-        // TODO set referral
-        data[2] =  abi.encodeWithSelector(ICToken.mint.selector, _amount, 0);
+
+        data[2] =  abi.encodeWithSelector(ICToken.mint.selector, _amount);
 
         return(targets, data);
     }

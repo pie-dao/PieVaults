@@ -231,7 +231,7 @@ describe("RSIManager", function() {
             expect(locked).to.eq(true);
         });
 
-        it("Non zero short balance afterwards should fail", async() => {
+        it("Non zero long balance afterwards should fail", async() => {
             await priceFeed.update(parseEther("90"));
             await synthetix.setSubtractSourceAmount(parseEther("0.000000001"));
 

@@ -10,9 +10,11 @@ import "../../interfaces/IAaveLendingPool.sol";
 contract LendingLogicAave is ILendingLogic {
 
     IAaveLendingPool public lendingPool;
+    uint16 public referralCode;
 
-    constructor(address _lendingPool) {
+    constructor(address _lendingPool, uint16 _referralCode) {
         lendingPool = IAaveLendingPool(_lendingPool);
+        referralCode = _referralCode;
     }
 
     function lend(address _underlying, uint256 _amount) external view override returns(address[] memory targets, bytes[] memory data) {
@@ -31,8 +33,7 @@ contract LendingLogicAave is ILendingLogic {
 
         // Deposit into Aave
         targets[2] = address(lendingPool);
-        // TODO set referral
-        data[2] =  abi.encodeWithSelector(lendingPool.deposit.selector, _underlying, _amount, 0);
+        data[2] =  abi.encodeWithSelector(lendingPool.deposit.selector, _underlying, _amount, referralCode);
 
         return(targets, data);
     }
@@ -46,5 +47,4 @@ contract LendingLogicAave is ILendingLogic {
         return(targets, data);
     }
 
-    // TODO add getter for interest rate
 }

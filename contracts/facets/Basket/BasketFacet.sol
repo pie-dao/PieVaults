@@ -3,13 +3,14 @@ pragma solidity ^0.7.1;
 
 import "@openzeppelin/contracts/math/SafeMath.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "../../interfaces/IBasketFacet.sol";
 import "../ERC20/LibERC20Storage.sol";
 import "../ERC20/LibERC20.sol";
-import "./LibBasketStorage.sol";
 import "../shared/Reentry/ReentryProtection.sol";
 import "../shared/Access/CallProtection.sol";
+import "./LibBasketStorage.sol";
 
-contract BasketFacet is ReentryProtection, CallProtection {
+contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -18,7 +19,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
     uint256 public constant MAX_EXIT_FEE = 10**17; // 10%
     uint256 public constant MAX_ANNUAL_FEE = 10**17; // 10%
 
-    function addToken(address _token) external protectedCall {
+    function addToken(address _token) external override protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         require(!bs.inPool[_token], "TOKEN_ALREADY_IN_POOL");
         // Enforce minimum to avoid rounding errors; (Minimum value is the same as in Balancer)
@@ -28,7 +29,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
         bs.tokens.push(IERC20(_token));
     }
 
-    function removeToken(address _token) external protectedCall {
+    function removeToken(address _token) external override protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
 
         require(bs.inPool[_token], "TOKEN_NOT_IN_POOL");
@@ -47,61 +48,61 @@ contract BasketFacet is ReentryProtection, CallProtection {
         }
     }
 
-    function setEntryFee(uint256 _fee) external protectedCall {
+    function setEntryFee(uint256 _fee) external override protectedCall {
         require(_fee <= MAX_ENTRY_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().entryFee = _fee;
     }
 
-    function getEntryFee() external view returns(uint256) {
+    function getEntryFee() external view override returns(uint256) {
         return LibBasketStorage.basketStorage().entryFee;
     }
 
-    function setExitFee(uint256 _fee) external protectedCall {
+    function setExitFee(uint256 _fee) external override protectedCall {
         require(_fee <= MAX_EXIT_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFee = _fee;
     }
 
-    function getExitFee() external view returns(uint256) {
+    function getExitFee() external view override returns(uint256) {
         return LibBasketStorage.basketStorage().exitFee;
     }
 
-    function setAnnualizedFee(uint256 _fee) external protectedCall {
+    function setAnnualizedFee(uint256 _fee) external override protectedCall {
         require(_fee <= MAX_ANNUAL_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().annualizedFee = _fee;
     }
 
-    function getAnnualizedFee() external view returns(uint256) {
+    function getAnnualizedFee() external view override returns(uint256) {
         return LibBasketStorage.basketStorage().annualizedFee;
     }
 
-    function setFeeBeneficiary(address _beneficiary) external protectedCall {
+    function setFeeBeneficiary(address _beneficiary) external override protectedCall {
         LibBasketStorage.basketStorage().feeBeneficiary = _beneficiary;
     }
 
-    function getFeeBeneficiary() external view returns(address) {
+    function getFeeBeneficiary() external view override returns(address) {
         return LibBasketStorage.basketStorage().feeBeneficiary;
     }
 
-    function setEntryFeeBeneficiaryShare(uint256 _share) external protectedCall {
+    function setEntryFeeBeneficiaryShare(uint256 _share) external override protectedCall {
         require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().entryFeeBeneficiaryShare = _share;
     }
 
-    function getEntryFeeBeneficiaryShare() external view returns(uint256) {
+    function getEntryFeeBeneficiaryShare() external view override returns(uint256) {
         return LibBasketStorage.basketStorage().entryFeeBeneficiaryShare;
     }
 
-    function setExitFeeBeneficiaryShare(uint256 _share) external protectedCall {
+    function setExitFeeBeneficiaryShare(uint256 _share) external override protectedCall {
         require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFeeBeneficiaryShare = _share;
     }
 
-    function getExitFeeBeneficiaryShare() external view returns(uint256) {
+    function getExitFeeBeneficiaryShare() external view override returns(uint256) {
         return LibBasketStorage.basketStorage().exitFeeBeneficiaryShare;
     }
 
 
-    function joinPool(uint256 _amount) external noReentry {
+    function joinPool(uint256 _amount) external override noReentry {
         require(!this.getLock(), "POOL_LOCKED");
         chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
@@ -133,7 +134,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
     }
 
     // Must be overwritten to withdraw from strategies
-    function exitPool(uint256 _amount) external virtual noReentry {
+    function exitPool(uint256 _amount) external override virtual noReentry {
         require(!this.getLock(), "POOL_LOCKED");
         chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
@@ -167,7 +168,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
     }
 
 
-    function calcOutStandingAnnualizedFee() public view returns(uint256) {
+    function calcOutStandingAnnualizedFee() public view override returns(uint256) {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
 
@@ -187,7 +188,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
         return totalSupply.mul(annualizedFee).div(10**18).mul(timePassed).div(365 days);
     }
 
-    function chargeOutstandingAnnualizedFee() public {
+    function chargeOutstandingAnnualizedFee() public override {
         uint256 outStandingFee = calcOutStandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
 
@@ -203,34 +204,34 @@ contract BasketFacet is ReentryProtection, CallProtection {
     }
 
     // returns true when locked
-    function getLock() external view returns(bool) {
+    function getLock() external view override returns(bool) {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         return bs.lockBlock == 0 || bs.lockBlock >= block.number;
     }
 
-    function getTokenInPool(address _token) external view returns(bool) {
+    function getTokenInPool(address _token) external view override returns(bool) {
         return LibBasketStorage.basketStorage().inPool[_token];
     }
 
-    function getLockBlock() external view returns(uint256) {
+    function getLockBlock() external view override returns(uint256) {
         return LibBasketStorage.basketStorage().lockBlock;
     }
 
     // lock up to and including _lock blocknumber
-    function setLock(uint256 _lock) external protectedCall {
+    function setLock(uint256 _lock) external override protectedCall {
         LibBasketStorage.basketStorage().lockBlock = _lock;
     }
 
-    function setCap(uint256 _maxCap) external protectedCall returns(uint256){
+    function setCap(uint256 _maxCap) external override protectedCall returns(uint256){
         LibBasketStorage.basketStorage().maxCap = _maxCap;
     }
 
     // Seperated balance function to allow yearn like strategies to be hooked up by inheriting from this contract and overriding
-    function balance(address _token) public view returns(uint256) {
+    function balance(address _token) public view override returns(uint256) {
         return IERC20(_token).balanceOf(address(this));
     }
 
-    function getTokens() external view returns (address[] memory result) {
+    function getTokens() external view override returns (address[] memory result) {
         IERC20[] memory tokens = LibBasketStorage.basketStorage().tokens;
         result = new address[](tokens.length);
 
@@ -241,11 +242,11 @@ contract BasketFacet is ReentryProtection, CallProtection {
         return(result);
     }
 
-    function getCap() external view returns(uint256){
+    function getCap() external view override returns(uint256){
         return LibBasketStorage.basketStorage().maxCap;
     }
 
-    function calcTokensForAmount(uint256 _amount) external view returns (address[] memory tokens, uint256[] memory amounts) {
+    function calcTokensForAmount(uint256 _amount) external view override returns (address[] memory tokens, uint256[] memory amounts) {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply.add(calcOutStandingAnnualizedFee());
 
@@ -266,7 +267,7 @@ contract BasketFacet is ReentryProtection, CallProtection {
         return(tokens, amounts);
     }
 
-    function calcTokensForAmountExit(uint256 _amount) external view returns (address[] memory tokens, uint256[] memory amounts) {
+    function calcTokensForAmountExit(uint256 _amount) external view override returns (address[] memory tokens, uint256[] memory amounts) {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 feeAmount = _amount.mul(bs.exitFee).div(10**18);
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply.add(calcOutStandingAnnualizedFee());

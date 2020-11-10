@@ -3,21 +3,21 @@ pragma solidity ^0.7.1;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
-
 import "diamond-2/contracts/libraries/LibDiamond.sol";
 
+import "../../interfaces/IERC20Facet.sol";
 import "./LibERC20Storage.sol";
 import "./LibERC20.sol";
 import "../shared/Access/CallProtection.sol";
 
-contract ERC20Facet is IERC20, CallProtection {
+contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
   using SafeMath for uint256;
 
   function initialize(
     uint256 _initialSupply,
     string memory _name,
     string memory _symbol
-  ) external {
+  ) external override {
     LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
@@ -29,23 +29,23 @@ contract ERC20Facet is IERC20, CallProtection {
     es.symbol = _symbol;
   }
 
-  function name() external view returns (string memory) {
+  function name() external view override returns (string memory) {
     return LibERC20Storage.erc20Storage().name;
   }
 
-  function symbol() external view returns (string memory) {
+  function symbol() external view override returns (string memory) {
     return LibERC20Storage.erc20Storage().symbol;
   }
 
-  function decimals() external pure returns (uint8) {
+  function decimals() external pure override returns (uint8) {
     return 18;
   }
 
-  function mint(address _receiver, uint256 _amount) protectedCall external {
+  function mint(address _receiver, uint256 _amount) external override protectedCall {
     LibERC20.mint(_receiver, _amount);
   }
 
-  function burn(address _from, uint256 _amount) protectedCall external {
+  function burn(address _from, uint256 _amount) external override protectedCall {
     LibERC20.burn(_from, _amount);
   }
 
@@ -87,18 +87,18 @@ contract ERC20Facet is IERC20, CallProtection {
 
   function allowance(address _owner, address _spender)
     external
-    override
     view
+    override
     returns (uint256)
   {
     return LibERC20Storage.erc20Storage().allowances[_owner][_spender];
   }
 
-  function balanceOf(address _of) external override view returns (uint256) {
+  function balanceOf(address _of) external view override returns (uint256) {
     return LibERC20Storage.erc20Storage().balances[_of];
   }
 
-  function totalSupply() external override view returns (uint256) {
+  function totalSupply() external view override returns (uint256) {
     return LibERC20Storage.erc20Storage().totalSupply;
   }
 

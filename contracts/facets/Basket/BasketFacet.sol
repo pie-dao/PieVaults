@@ -222,7 +222,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         LibBasketStorage.basketStorage().lockBlock = _lock;
     }
 
-    function setCap(uint256 _maxCap) external override protectedCall returns(uint256){
+    function setCap(uint256 _maxCap) external override protectedCall {
         LibBasketStorage.basketStorage().maxCap = _maxCap;
     }
 
@@ -231,9 +231,9 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         return IERC20(_token).balanceOf(address(this));
     }
 
-    function getTokens() external view override returns (address[] memory result) {
+    function getTokens() external view override returns (address[] memory) {
         IERC20[] memory tokens = LibBasketStorage.basketStorage().tokens;
-        result = new address[](tokens.length);
+        address[] memory result = new address[](tokens.length);
 
         for(uint256 i = 0; i < tokens.length; i ++) {
             result[i] = address(tokens[i]);

@@ -13,11 +13,22 @@ contract LendingManager is Ownable {
     LendingRegistry public lendingRegistry;
     IExperiPie public basket;
 
+    /**
+        @notice Constructor
+        @param _lendingRegistry Address of the lendingRegistry contract
+        @param _basket Address of the pool/pie/basket to manage
+    */
     constructor(address _lendingRegistry, address _basket) public {
         lendingRegistry = LendingRegistry(_lendingRegistry);
         basket = IExperiPie(_basket);
     }
 
+    /**
+        @notice Move underlying to a lending protocol
+        @param _underlying Address of the underlying token
+        @param _amount Amount of underlying to lend
+        @param _protocol Bytes32 protocol key to lend to
+    */
     function lend(address _underlying, uint256 _amount, bytes32 _protocol) public onlyOwner {
         // _amount or actual balance, whatever is less
         uint256 amount = _amount.min(IERC20(_underlying).balanceOf(address(basket)));
@@ -37,6 +48,11 @@ contract LendingManager is Ownable {
         addToken(lendingRegistry.underlyingToProtocolWrapped(_underlying, _protocol));
     }
 
+    /**
+        @notice Unlend wrapped token from its lending protocol
+        @param _wrapped Address of the wrapped token
+        @param _amount Amount of the wrapped token to unlend
+    */
     function unlend(address _wrapped, uint256 _amount) public onlyOwner {
         // unlend token
          // _amount or actual balance, whatever is less
@@ -56,6 +72,12 @@ contract LendingManager is Ownable {
         removeToken(_wrapped);
     }
 
+    /**
+        @notice Unlend and immediately lend in a different protocol
+        @param _wrapped Address of the wrapped token to bounce to another protocol
+        @param _amount Amount of the wrapped token to bounce to the other protocol
+        @param _toProtocol Protocol to deposit bounced tokens in
+    */
     function bounce(address _wrapped, uint256 _amount, bytes32 _toProtocol) external {
        unlend(_wrapped, _amount);
        // Bounce all to new protocol

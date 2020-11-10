@@ -19,22 +19,29 @@ contract LendingRegistry is Ownable {
     // Maps protocol to addresses containing lend and unlend logic
     mapping(bytes32 => address) public protocolToLogic;
 
-    // TODO events
-
+    event WrappedToProtocolSet(address indexed wrapped, bytes32 indexed protocol);
+    event WrappedToUnderlyingSet(address indexed wrapped, address indexed underlying);
+    event ProtocolToLogicSet(bytes32 indexed protocol, address indexed logic);
+    event UnderlyingToProtocolWrappedSet(address indexed underlying, bytes32 indexed protocol, address indexed wrapped);
+    
     function setWrappedToProtocol(address _wrapped, bytes32 _protocol) onlyOwner external {
         wrappedToProtocol[_wrapped] = _protocol;
+        emit WrappedToProtocolSet(_wrapped, _protocol);
     }
 
     function setWrappedToUnderlying(address _wrapped, address _underlying) onlyOwner external {
         wrappedToUnderlying[_wrapped] = _underlying;
+        emit WrappedToUnderlyingSet(_wrapped, _underlying);
     }
 
     function setProtocolToLogic(bytes32 _protocol, address _logic) onlyOwner external {
         protocolToLogic[_protocol] = _logic;
+        emit ProtocolToLogicSet(_protocol, _logic);
     }
 
     function setUnderlyingToProtocolWrapped(address _underlying, bytes32 _protocol, address _wrapped) onlyOwner external {
         underlyingToProtocolWrapped[_underlying][_protocol] = _wrapped;
+        emit UnderlyingToProtocolWrappedSet(_underlying, _protocol, _wrapped);
     } 
 
     function getLendTXData(address _underlying, uint256 _amount, bytes32 _protocol) external view returns(address[] memory targets, bytes[] memory data) {

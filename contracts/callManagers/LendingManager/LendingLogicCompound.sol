@@ -50,5 +50,4 @@ contract LendingLogicCompound is ILendingLogic {
         return(targets, data);
     }
 
-    // TODO add getter for interest rate
 }

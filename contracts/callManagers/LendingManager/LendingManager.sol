@@ -13,6 +13,8 @@ contract LendingManager is Ownable {
     LendingRegistry public lendingRegistry;
     IExperiPie public basket;
 
+    event Lend(address indexed underlying, uint256 amount, bytes32 indexed protocol);
+    event UnLend(address indexed wrapped, uint256 amount);
     /**
         @notice Constructor
         @param _lendingRegistry Address of the lendingRegistry contract
@@ -46,6 +48,8 @@ contract LendingManager is Ownable {
 
         // add wrapped token
         addToken(lendingRegistry.underlyingToProtocolWrapped(_underlying, _protocol));
+
+        emit Lend(_underlying, _amount, _protocol);
     }
 
     /**
@@ -70,6 +74,8 @@ contract LendingManager is Ownable {
 
         // if needed remove wrapped
         removeToken(_wrapped);
+
+        emit UnLend(_wrapped, _amount);
     }
 
     /**

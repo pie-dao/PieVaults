@@ -4,6 +4,10 @@ pragma experimental ABIEncoderV2;
 
 interface ICallFacet {
 
+    event CallerAdded(address indexed caller);
+    event CallerRemoved(address indexed caller);
+    event Call(address indexed target, bytes data, uint256 value);
+
     /**
         @notice Lets whitelisted callers execute a batch of arbitrary calls from the pool. Reverts if one of the calls fails
         @param _targets Array of addresses of targets to call

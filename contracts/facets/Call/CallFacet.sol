@@ -10,9 +10,6 @@ import "./LibCallStorage.sol";
 
 contract CallFacet is ReentryProtection, ICallFacet {
 
-  event CallerAdded(address indexed caller);
-  event CallerRemoved(address indexed caller);
-
   // uses modified call protection modifier to also allow whitelisted addresses to call
   modifier protectedCall() {
     require(
@@ -101,6 +98,7 @@ contract CallFacet is ReentryProtection, ICallFacet {
   ) internal {
     (bool success, ) = _target.call{ value: _value }(_calldata);
     require(success, "CALL_FAILED");
+    emit Call(_target, _calldata, _value);
   }
 
   function canCall(address _caller) external view override returns (bool) {

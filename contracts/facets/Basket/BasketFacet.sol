@@ -19,6 +19,8 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     uint256 public constant MAX_EXIT_FEE = 10**17; // 10%
     uint256 public constant MAX_ANNUAL_FEE = 10**17; // 10%
 
+    
+
     function addToken(address _token) external override protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         require(!bs.inPool[_token], "TOKEN_ALREADY_IN_POOL");
@@ -27,6 +29,8 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
 
         bs.inPool[_token] = true;
         bs.tokens.push(IERC20(_token));
+
+        emit TokenAdded(_token);
     }
 
     function removeToken(address _token) external override protectedCall {
@@ -46,11 +50,14 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
                 break;
             }
         }
+
+        emit TokenRemoved(_token);
     }
 
     function setEntryFee(uint256 _fee) external override protectedCall {
         require(_fee <= MAX_ENTRY_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().entryFee = _fee;
+        emit EntryFeeSet(_fee);
     }
 
     function getEntryFee() external view override returns(uint256) {
@@ -60,6 +67,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     function setExitFee(uint256 _fee) external override protectedCall {
         require(_fee <= MAX_EXIT_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFee = _fee;
+        emit ExitFeeSet(_fee);
     }
 
     function getExitFee() external view override returns(uint256) {
@@ -69,6 +77,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     function setAnnualizedFee(uint256 _fee) external override protectedCall {
         require(_fee <= MAX_ANNUAL_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().annualizedFee = _fee;
+        emit AnnualizedFeeSet(_fee);
     }
 
     function getAnnualizedFee() external view override returns(uint256) {
@@ -77,6 +86,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
 
     function setFeeBeneficiary(address _beneficiary) external override protectedCall {
         LibBasketStorage.basketStorage().feeBeneficiary = _beneficiary;
+        emit FeeBeneficiarySet(_beneficiary);
     }
 
     function getFeeBeneficiary() external view override returns(address) {
@@ -86,6 +96,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     function setEntryFeeBeneficiaryShare(uint256 _share) external override protectedCall {
         require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().entryFeeBeneficiaryShare = _share;
+        emit EntryFeeBeneficiaryShareSet(_share);
     }
 
     function getEntryFeeBeneficiaryShare() external view override returns(uint256) {
@@ -95,6 +106,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     function setExitFeeBeneficiaryShare(uint256 _share) external override protectedCall {
         require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFeeBeneficiaryShare = _share;
+        emit ExitFeeBeneficiaryShareSet(_share);
     }
 
     function getExitFeeBeneficiaryShare() external view override returns(uint256) {
@@ -131,6 +143,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         }
 
         LibERC20.mint(msg.sender, _amount);
+        emit PoolJoined(msg.sender, _amount);
     }
 
     // Must be overwritten to withdraw from strategies
@@ -165,6 +178,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
 
         require(totalSupply.sub(_amount) >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");
         LibERC20.burn(msg.sender, _amount);
+        emit PoolExited(msg.sender, _amount);
     }
 
 
@@ -201,6 +215,8 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         ) {
             LibERC20.mint(bs.feeBeneficiary, outStandingFee);
         }
+
+        emit FeeCharged(outStandingFee);
     }
 
     // returns true when locked
@@ -220,10 +236,12 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     // lock up to and including _lock blocknumber
     function setLock(uint256 _lock) external override protectedCall {
         LibBasketStorage.basketStorage().lockBlock = _lock;
+        emit LockSet(_lock);
     }
 
     function setCap(uint256 _maxCap) external override protectedCall {
         LibBasketStorage.basketStorage().maxCap = _maxCap;
+        emit CapSet(_maxCap);
     }
 
     // Seperated balance function to allow yearn like strategies to be hooked up by inheriting from this contract and overriding

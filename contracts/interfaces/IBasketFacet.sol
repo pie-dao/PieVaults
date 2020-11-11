@@ -4,6 +4,21 @@ pragma experimental ABIEncoderV2;
 
 interface IBasketFacet {
 
+    event TokenAdded(address indexed _token);
+    event TokenRemoved(address indexed _token);
+    event EntryFeeSet(uint256 fee);
+    event ExitFeeSet(uint256 fee);
+    event AnnualizedFeeSet(uint256 fee);
+    event FeeBeneficiarySet(address indexed beneficiary);
+    event EntryFeeBeneficiaryShareSet(uint256 share);
+    event ExitFeeBeneficiaryShareSet(uint256 share);
+
+    event PoolJoined(address indexed who, uint256 amount);
+    event PoolExited(address indexed who, uint256 amount);
+    event FeeCharged(uint256 amount);
+    event LockSet(uint256 lockBlock);
+    event CapSet(uint256 cap);
+
     /** 
         @notice Sets entry fee paid when minting
         @param _fee Amount of fee. 1e18 == 100%, capped at 10%

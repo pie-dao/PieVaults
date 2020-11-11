@@ -44,8 +44,7 @@ describe("LendingLogicAave", function() {
         await token.mint(mintAmount, account);
 
         lendingPool = await deployContract(signers[0], MockAaveLendingPoolArtifact, [token.address, aToken.address]) as MockAaveLendingPool;
-        lendingLogic = await deployContract(signers[0], LendingLogicAaveArtifact, [lendingPool.address]) as LendingLogicAave;
-    
+        lendingLogic = await deployContract(signers[0], LendingLogicAaveArtifact, [lendingPool.address, 0]) as LendingLogicAave;
 
         await timeTraveler.snapshot();
     });

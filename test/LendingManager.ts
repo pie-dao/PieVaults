@@ -151,7 +151,7 @@ describe("LendingManager", function() {
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
 
-        lendingLogicAave = await (new LendingLogicAaveFactory(signers[0])).deploy(aaveLendingPool.address);
+        lendingLogicAave = await (new LendingLogicAaveFactory(signers[0])).deploy(aaveLendingPool.address, 0);
         lendingLogicCompound = await (new LendingLogicCompoundFactory(signers[0])).deploy(lendingRegistry.address);
 
         // Setup lending registry

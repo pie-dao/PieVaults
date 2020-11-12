@@ -23,17 +23,24 @@ contract PieFactoryContract is Ownable {
         uint256 indexed index
     );
 
+    event DefaultControllerSet(address indexed controller);
+    event FacetAdded(IDiamondCut.FacetCut);
+    event FacetRemoved(IDiamondCut.FacetCut);
+
     function setDefaultController(address _controller) external onlyOwner {
         defaultController = _controller;
+        emit DefaultControllerSet(_controller);
     }
 
     function removeFacet(uint256 _index) external onlyOwner {
+        emit FacetRemoved(defaultCut[_index]);
         defaultCut[_index] = defaultCut[defaultCut.length - 1];
         defaultCut.pop();
     }
 
     function addFacet(IDiamondCut.FacetCut memory _facet) external onlyOwner {
         defaultCut.push(_facet);
+        emit FacetAdded(_facet);
     }
 
     function bakePie(

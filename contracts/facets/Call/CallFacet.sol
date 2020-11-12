@@ -3,14 +3,12 @@ pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.1;
 
 import "diamond-2/contracts/libraries/LibDiamond.sol";
+import "../../interfaces/ICallFacet.sol";
 import "../shared/Reentry/ReentryProtection.sol";
 import "../shared/Access/CallProtection.sol";
 import "./LibCallStorage.sol";
 
-contract CallFacet is ReentryProtection {
-
-  event CallerAdded(address indexed caller);
-  event CallerRemoved(address indexed caller);
+contract CallFacet is ReentryProtection, ICallFacet {
 
   // uses modified call protection modifier to also allow whitelisted addresses to call
   modifier protectedCall() {
@@ -22,7 +20,7 @@ contract CallFacet is ReentryProtection {
     _;
   }
 
-  function addCaller(address _caller) external {
+  function addCaller(address _caller) external override {
     require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
@@ -34,7 +32,7 @@ contract CallFacet is ReentryProtection {
     emit CallerAdded(_caller);
   }
 
-  function removeCaller(address _caller) external {
+  function removeCaller(address _caller) external override {
     require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
@@ -60,7 +58,7 @@ contract CallFacet is ReentryProtection {
     address[] memory _targets,
     bytes[] memory _calldata,
     uint256[] memory _values
-  ) public noReentry protectedCall {
+  ) public override noReentry protectedCall {
     require(
       _targets.length == _calldata.length && _values.length == _calldata.length,
       "ARRAY_LENGTH_MISMATCH"
@@ -74,7 +72,7 @@ contract CallFacet is ReentryProtection {
   function callNoValue(
     address[] memory _targets,
     bytes[] memory _calldata
-  ) public noReentry protectedCall {
+  ) public override noReentry protectedCall {
     require(
       _targets.length == _calldata.length,
       "ARRAY_LENGTH_MISMATCH"
@@ -85,12 +83,11 @@ contract CallFacet is ReentryProtection {
     }
   }
 
-
   function singleCall(
     address _target,
     bytes calldata _calldata,
     uint256 _value
-  ) external noReentry protectedCall {
+  ) external override noReentry protectedCall {
     _call(_target, _calldata, _value);
   }
 
@@ -101,13 +98,14 @@ contract CallFacet is ReentryProtection {
   ) internal {
     (bool success, ) = _target.call{ value: _value }(_calldata);
     require(success, "CALL_FAILED");
+    emit Call(_target, _calldata, _value);
   }
 
-  function canCall(address _caller) external view returns (bool) {
+  function canCall(address _caller) external view override returns (bool) {
     return LibCallStorage.callStorage().canCall[_caller];
   }
 
-  function getCallers() external view returns (address[] memory) {
+  function getCallers() external view override returns (address[] memory) {
     return LibCallStorage.callStorage().callers;
   }
 }

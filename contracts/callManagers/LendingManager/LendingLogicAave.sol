@@ -20,16 +20,18 @@ contract LendingLogicAave is ILendingLogic {
     function lend(address _underlying, uint256 _amount) external view override returns(address[] memory targets, bytes[] memory data) {
         IERC20 underlying = IERC20(_underlying);
 
+        address core = lendingPool.core();
+
         targets = new address[](3);
         data = new bytes[](3);
 
         // zero out approval to be sure
         targets[0] = _underlying;
-        data[0] = abi.encodeWithSelector(underlying.approve.selector, address(lendingPool), 0);
+        data[0] = abi.encodeWithSelector(underlying.approve.selector, address(core), 0);
 
         // Set approval
         targets[1] = _underlying;
-        data[1] = abi.encodeWithSelector(underlying.approve.selector, address(lendingPool), _amount);
+        data[1] = abi.encodeWithSelector(underlying.approve.selector, address(core), _amount);
 
         // Deposit into Aave
         targets[2] = address(lendingPool);

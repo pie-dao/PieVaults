@@ -25,4 +25,8 @@ contract MockAaveLendingPool is IAaveLendingPool {
     function setRevertDeposit(bool _doRevert) external {
         revertDeposit = _doRevert;
     }
+
+    function core() external view override returns(address) {
+        return address(this);
+    }
 }

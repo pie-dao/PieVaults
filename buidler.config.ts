@@ -22,6 +22,7 @@ import { LendingLogicCompoundFactory } from "./typechain/LendingLogicCompoundFac
 import { LendingRegistry } from "./typechain/LendingRegistry";
 import { LendingRegistryFactory } from "./typechain/LendingRegistryFactory";
 import { LendingLogicAaveFactory } from "./typechain/LendingLogicAaveFactory";
+import { LendingManagerFactory } from "./typechain/LendingManagerFactory";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
@@ -248,6 +249,16 @@ task("deploy-pie-factory")
       await (await pieFactory.addFacet(facet, overrides)).wait(1);
     }
 
+});
+
+task("deploy-lending-manager")
+  .addParam("lendingRegistry", "address of the lending registry")
+  .addParam("pie", "address of the pie to manage")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    const lendingManager = await (new LendingManagerFactory(signers[0])).deploy(taskArgs.lendingRegistry, taskArgs.pie);
+
+    console.log(`lendingManager deployed at: ${lendingManager.address}`);
 });
 
 task("deploy-lending-registry")

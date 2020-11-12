@@ -59,3 +59,50 @@ function bounce(address _wrapped, uint256 _amount, bytes32 _toProtocol) external
 ## Lending Registry
 
 The lending registry keeps track of all lending protocols and wrapped tokens. Only tokens and protocols registered in this registry can be used by the `LendingManager`. Currently supported lending protocols are Compound and Aave.
+
+Contract address: `0xB739Dcf499306B191D9D4fa5255A8f20066a6a96`
+
+With the following functions protocols and wrapped tokens can be added:
+
+```solidity
+
+/**
+    @notice Set which protocl a wrapped token belongs to
+    @param _wrapped Address of the wrapped token
+    @param _protocol Bytes32 key of the protocol
+*/
+function setWrappedToProtocol(address _wrapped, bytes32 _protocol) external;
+
+/**
+    @notice Set what is the underlying for a wrapped token
+    @param _wrapped Address of the wrapped token
+    @param _underlying Address of the underlying token
+*/
+function setWrappedToUnderlying(address _wrapped, address _underlying) external;
+
+/**
+    @notice Set the logic contract for the protocol
+    @param _protocol Bytes32 key of the procol
+    @param _logic Address of the lending logic contract for that protocol
+*/
+function setProtocolToLogic(bytes32 _protocol, address _logic) external;
+
+/**
+    @notice Set the wrapped token for the underlying deposited in this protocol
+    @param _underlying Address of the unerlying token
+    @param _protocol Bytes32 key of the protocol
+    @param _wrapped Address of the wrapped token
+*/
+function setUnderlyingToProtocolWrapped(address _underlying, bytes32 _protocol, address _wrapped) external;
+
+```
+
+
+### Lending logic contracts
+
+| Protocol | Key                                                                | Address                                    |
+|----------|--------------------------------------------------------------------|--------------------------------------------|
+| Compound | 0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a1144761c7 | 0xB9a13E1D9c5dad1557C3B9B20ab99fb0FB16cCA7 |
+| Aave     | 0xa9699be9874dcc3e11474d7d87b44bb314eb412a1960f1478100f7e2ccd4a6eb | 0xe352efed04bbda395e0cf10f3e984ddd02fa05d6 |
+
+Lending logic contracts return the calls needed to lend or unlend from a protocol.

@@ -18,6 +18,10 @@ import OwnershipFacetArtifact from "./artifacts/OwnershipFacet.json";
 import PieFactoryContractArtifact from "./artifacts/PieFactoryContract.json";
 import { IExperiPieFactory } from "./typechain/IExperiPieFactory";
 import { Ierc20Factory } from "./typechain/Ierc20Factory";
+import { LendingLogicCompoundFactory } from "./typechain/LendingLogicCompoundFactory";
+import { LendingRegistry } from "./typechain/LendingRegistry";
+import { LendingRegistryFactory } from "./typechain/LendingRegistryFactory";
+import { LendingLogicAaveFactory } from "./typechain/LendingLogicAaveFactory";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
@@ -244,6 +248,33 @@ task("deploy-pie-factory")
       await (await pieFactory.addFacet(facet, overrides)).wait(1);
     }
 
+});
+
+task("deploy-lending-registry")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    const lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
+    console.log(`Deployed lendingRegistry at: ${lendingRegistry.address}`);
+  });
+
+task("deploy-lending-logic-compound")
+  .addParam("lendingRegistry", "address of the lending registry")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    
+    const lendingLogicCompound = await (new LendingLogicCompoundFactory(signers[0])).deploy(taskArgs.lendingRegistry);
+
+    console.log(`Deployed lendingLogicCompound at: ${lendingLogicCompound.address}`);
+});
+
+task("deploy-lending-logic-aave")
+  .addParam("lendingPool")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+
+    const lendingLogicAave = await (new LendingLogicAaveFactory(signers[0])).deploy(taskArgs.lendingPool, 21);
+
+    console.log(`Deployed lendingLogicAave at: ${lendingLogicAave.address}`);
 });
 
 export default config;

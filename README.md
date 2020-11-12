@@ -30,7 +30,7 @@ The owner of the lending manager instance can `lend`, `unlend` and `bounce`(hopp
 
 These functions have the following interface and should be called on the Lending Manager contract.
 
-```
+```solidity
 /**
     @notice Move underlying to a lending protocol
     @param _underlying Address of the underlying token
@@ -52,7 +52,7 @@ These functions have the following interface and should be called on the Lending
     @param _amount Amount of the wrapped token to bounce to the other protocol
     @param _toProtocol Protocol to deposit bounced tokens in
     */
-    function bounce(address _wrapped, uint256 _amount, bytes32 _toProtocol) external
+    function bounce(address _wrapped, uint256 _amount, bytes32 _toProtocol) external;
 
 ```
 

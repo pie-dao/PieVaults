@@ -17,6 +17,7 @@ import DiamondLoupeFacetArtifact from "./artifacts/DiamondLoupeFacet.json";
 import OwnershipFacetArtifact from "./artifacts/OwnershipFacet.json";
 import PieFactoryContractArtifact from "./artifacts/PieFactoryContract.json";
 import { IExperiPieFactory } from "./typechain/IExperiPieFactory";
+import { Ierc20Factory } from "./typechain/Ierc20Factory";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
@@ -41,6 +42,11 @@ const config = {
     },
     localhost: {
       url: 'http://localhost:8545'
+    },
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
+      accounts: [process.env.PRIVATE_KEY],
+      gasPrice: 70000000000
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
@@ -111,6 +117,52 @@ task("execute-calls")
     console.log("Calls send tx id:", tx.hash);
 });
 
+task("get-default-cut")
+  .addParam("factory")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+
+    const factory = PieFactoryContractFactory.connect(taskArgs.factory, signers[0]);
+    const cut = await factory.getDefaultCut();
+
+    console.log(cut);
+});
+
+task("deploy-pie-from-factory")
+  .addParam("allocation", "path to json")
+  .addParam("factory", "pieFactory address", "0xf1e9eC6f1a4D00a24a9F8035C2C5e1D093f9b9aD")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    const account = await signers[0].getAddress();
+
+    const factory = PieFactoryContractFactory.connect(taskArgs.factory, signers[0]);
+
+
+    const allocation = require(taskArgs.allocation);
+
+    const tokens = allocation.tokens;
+
+    for (const token of tokens) {
+      const tokenContract = Ierc20Factory.connect(token.address, signers[0]);
+      const allowance = await tokenContract.allowance(account, factory.address);
+
+      if(allowance.lt(token.amount)) {
+        console.log(`Approving ${token.name} ${token.address}`);
+        await (await tokenContract.approve(factory.address, constants.MaxUint256)).wait(1);
+      }
+    }
+
+    const receipt = await factory.bakePie(
+      tokens.map(token => (token.address)),
+      tokens.map(token => (token.amount)),
+      allocation.initialSupply,
+      allocation.symbol,
+      allocation.name
+    );
+
+    console.log(`Pie deployed: ${receipt.hash}`);
+});
+
 task("deploy-pie-factory")
   .setAction(async(taskArgs, {ethers}) => {
     const signers = await ethers.getSigners();
@@ -120,17 +172,23 @@ task("deploy-pie-factory")
 
     const contracts: any[] = [];
 
-    const basketFacet = (await deployContract(signers[0], BasketFacetArtifact)) as BasketFacet;
+    const gasPrice = 40000000000
+
+    const overrides = {
+      gasPrice
+    };
+
+    const basketFacet = (await deployContract(signers[0], BasketFacetArtifact, [], overrides)) as BasketFacet;
     contracts.push({name: "basketFacet", address: basketFacet.address});
-    const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact)) as Erc20Facet;
+    const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact, [], overrides)) as Erc20Facet;
     contracts.push({name: "erc20Facet", address: erc20Facet.address});
-    const callFacet = (await deployContract(signers[0], CallFacetArtifact)) as CallFacet;
+    const callFacet = (await deployContract(signers[0], CallFacetArtifact, [], overrides)) as CallFacet;
     contracts.push({name: "callFacet", address: callFacet.address});
-    const diamondCutFacet = (await deployContract(signers[0], DiamondCutFacetArtifact)) as DiamondCutFacet;
+    const diamondCutFacet = (await deployContract(signers[0], DiamondCutFacetArtifact, [], overrides)) as DiamondCutFacet;
     contracts.push({name: "diamondCutFacet", address: diamondCutFacet.address});
-    const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact)) as DiamondLoupeFacet;
+    const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact, [], overrides)) as DiamondLoupeFacet;
     contracts.push({name: "diamondLoupeFacet", address: diamondLoupeFacet.address});
-    const ownershipFacet = (await deployContract(signers[0], OwnershipFacetArtifact)) as OwnershipFacet;
+    const ownershipFacet = (await deployContract(signers[0], OwnershipFacetArtifact, [], overrides)) as OwnershipFacet;
     contracts.push({name: "ownershipFacet", address: ownershipFacet.address});
 
     console.table(contracts);
@@ -174,14 +232,16 @@ task("deploy-pie-factory")
         },
     ];
 
+    console.log(JSON.stringify(diamondCut));
+
     console.log("deploying factory");
-    const pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact)) as PieFactoryContract;
+    const pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact, [] , overrides)) as PieFactoryContract;
     console.log(`Factory deployed at: ${pieFactory.address}`);
 
     // Add default facets
     for(const facet of diamondCut) {
       console.log("adding default facet");
-      await (await pieFactory.addFacet(facet)).wait(1);
+      await (await pieFactory.addFacet(facet, overrides)).wait(1);
     }
 
 });

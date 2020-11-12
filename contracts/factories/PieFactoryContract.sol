@@ -27,6 +27,10 @@ contract PieFactoryContract is Ownable {
     event FacetAdded(IDiamondCut.FacetCut);
     event FacetRemoved(IDiamondCut.FacetCut);
 
+    constructor() {
+        defaultController = msg.sender;
+    }
+
     function setDefaultController(address _controller) external onlyOwner {
         defaultController = _controller;
         emit DefaultControllerSet(_controller);

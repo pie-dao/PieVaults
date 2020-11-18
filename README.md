@@ -106,3 +106,9 @@ function setUnderlyingToProtocolWrapped(address _underlying, bytes32 _protocol, 
 | Aave     | 0xa9699be9874dcc3e11474d7d87b44bb314eb412a1960f1478100f7e2ccd4a6eb | 0x6Eb123bbd02324600AcF8a53575547EEB0a43135 |
 
 Lending logic contracts return the calls needed to lend or unlend from a protocol.
+
+## Deploying an ExperiPie
+
+1. Create an allocation file like [this one](/allocations/mainnet/DLY.json)
+2. run `npx buidler deploy-pie-from-factory --allocation [PATH_TO_ALLOCATION] --factory [FACTORY_ADDRESS] --network mainnet`
+3. Copy the tx hash and search on Etherscan to find the address

@@ -114,6 +114,30 @@ describe("ERC20Facet", function() {
           );
         });
       });
+      
+      describe("Setting token metatdata", async() => {
+        it("Setting the token symbol from the contract owner should work", async() => {
+          const newSymbol = "1337";
+          await experiPie.setSymbol(newSymbol);
+
+          const symbol = await experiPie.symbol();
+          expect(symbol).to.eq(newSymbol);
+        });
+        it("Setting the contract name from a non contract owner should fail", async() => {
+          await expect(experiPie.connect(signers[1]).setSymbol("1337")).to.be.revertedWith("NOT_ALLOWED");
+        });
+        it("Setting the token name from the contract owner should work", async() => {
+          const newName = "420";
+          await experiPie.setName(newName);
+
+          const name = await experiPie.name();
+          expect(name).to.eq(newName);
+        })
+        it("Setting the token name from a non contract owner should fail", async() => {
+          await expect(experiPie.connect(signers[1]).setName("0xc4ad")).to.be.revertedWith("NOT_ALLOWED");
+        });
+      });
+
       describe("balanceOf", async () => {
         it("Should return zero if no balance", async () => {
           const balance = await experiPie.balanceOf(account);

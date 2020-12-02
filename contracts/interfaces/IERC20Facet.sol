@@ -47,4 +47,16 @@ interface IERC20Facet {
         string memory _name,
         string memory _symbol
     ) external;
+
+    /**
+        @notice Set the token name of the contract. Can only be called by the contract owner or the contract itself
+        @param _name New token name
+    */
+    function setName(string calldata _name) external;
+
+    /**
+        @notice Set the token symbol of the contract. Can only be called by the contract owner or the contract itself
+        @param _symbol New token symbol
+    */
+    function setSymbol(string calldata _symbol) external;
 }

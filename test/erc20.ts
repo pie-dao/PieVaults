@@ -182,6 +182,55 @@ describe("ERC20Facet", function() {
           await experiPie.approve(account2, 0);
         });
     });
+    describe("increaseApproval", async() => {
+      it("Should emit event", async () => {
+        await expect(experiPie.increaseApproval(account2, constants.WeiPerEther))
+          .to.emit(experiPie, "Approval")
+          .withArgs(account, account2, constants.WeiPerEther);
+      });
+      it("Should work when there was no approved amount before", async () => {
+        await experiPie.increaseApproval(account2, constants.WeiPerEther);
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.WeiPerEther);
+      });
+      it("Should work when there was an approved amount before", async () => {
+        await experiPie.increaseApproval(account2, constants.WeiPerEther);
+        await experiPie.increaseApproval(account2, constants.WeiPerEther);
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.WeiPerEther.mul(2));
+      });
+      it("Increasing approval beyond max uint256 should fail", async () => {
+        await experiPie.increaseApproval(account2, constants.MaxUint256);
+        await expect(experiPie.increaseApproval(account2, constants.WeiPerEther)).to.be.revertedWith(
+          "SafeMath: addition overflow"
+        );
+      });
+    });
+    describe("decreaseApproval", async() => {
+      beforeEach(async () => {
+        await experiPie.approve(account2, constants.WeiPerEther);
+      });
+      it("Should emit event", async () => {
+        await expect(experiPie.decreaseApproval(account2, constants.WeiPerEther))
+          .to.emit(experiPie, "Approval")
+          .withArgs(account, account2, constants.Zero);
+      });
+      it("Decreasing part of the approval should work", async () => {
+        await experiPie.decreaseApproval(account2, constants.WeiPerEther.div(2));
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.WeiPerEther.div(2));
+      });
+      it("Decreasing the entire approval should work", async () => {
+        await experiPie.decreaseApproval(account2, constants.WeiPerEther);
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.Zero);
+      });
+      it("Decreasing more than the approval amount should set approval to zero", async () => {
+        await experiPie.decreaseApproval(account2, constants.WeiPerEther.mul(2));
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.Zero);
+      });
+    });
     describe("transferFrom", async () => {
         beforeEach(async () => {
           await experiPie.mint(account, constants.WeiPerEther);

@@ -47,4 +47,18 @@ interface IERC20Facet {
         string memory _name,
         string memory _symbol
     ) external;
+
+    /**
+        @notice Increase the amount of tokens another address can spend
+        @param _spender Spender
+        @param _amount Amount to increase by
+    */
+    function increaseApproval(address _spender, uint256 _amount) external returns (bool);
+
+    /**
+        @notice Decrease the amount of tokens another address can spend
+        @param _spender Spender
+        @param _amount Amount to decrease by
+    */
+    function decreaseApproval(address _spender, uint256 _amount) external returns (bool);
 }

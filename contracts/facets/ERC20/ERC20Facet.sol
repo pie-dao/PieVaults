@@ -59,6 +59,25 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     return true;
   }
 
+  function increaseApproval(address _spender, uint256 _amount) external override returns (bool) {
+    LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+    es.allowances[msg.sender][_spender] = es.allowances[msg.sender][_spender].add(_amount);
+    emit Approval(msg.sender, _spender, es.allowances[msg.sender][_spender]);
+    return true;
+  }
+
+  function decreaseApproval(address _spender, uint256 _amount) external override returns (bool) {
+    LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+    uint256 oldValue = es.allowances[msg.sender][_spender];
+    if (_amount > oldValue) {
+      es.allowances[msg.sender][_spender] = 0;
+    } else {
+      es.allowances[msg.sender][_spender] = oldValue.sub(_amount);
+    }
+    emit Approval(msg.sender, _spender, es.allowances[msg.sender][_spender]);
+    return true;
+  }
+
   function transfer(address _to, uint256 _amount)
     external
     override

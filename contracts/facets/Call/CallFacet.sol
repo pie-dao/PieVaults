@@ -102,7 +102,7 @@ contract CallFacet is ReentryProtection, ICallFacet {
     require(address(this).balance >= _value, "ETH_BALANCE_TOO_LOW");
     (bool success, ) = _target.call{ value: _value }(_calldata);
     require(success, "CALL_FAILED");
-    emit Call(_target, _calldata, _value);
+    emit Call(msg.sender, _target, _calldata, _value);
   }
 
   function canCall(address _caller) external view override returns (bool) {

@@ -43,16 +43,14 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         bs.inPool[_token] = false;
 
         // remove token from array
-        // TODO consider limiting max amount of tokens to mitigate running out of gas.
         for(uint256 i; i < bs.tokens.length; i ++) {
             if(address(bs.tokens[i]) == _token) {
                 bs.tokens[i] = bs.tokens[bs.tokens.length - 1];
                 bs.tokens.pop();
+                emit TokenRemoved(_token);
                 break;
             }
         }
-
-        emit TokenRemoved(_token);
     }
 
     function setEntryFee(uint256 _fee) external override protectedCall {

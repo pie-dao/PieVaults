@@ -281,5 +281,8 @@ describe("ERC20Facet", function() {
           const approvalAmount = await experiPie.allowance(account, account2);
           expect(approvalAmount).to.eq(constants.MaxUint256);
         });
+        it("Should fail when _from is zero address", async() => {
+          await expect(experiPie.transferFrom(constants.AddressZero, account, parseEther("1"))).to.be.revertedWith("FROM_INVALID");
+        });
     });
 })

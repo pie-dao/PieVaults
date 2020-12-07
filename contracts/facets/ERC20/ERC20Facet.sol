@@ -96,6 +96,7 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     uint256 _amount
   ) external override returns (bool) {
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+    require(_from != address(0), "FROM_INVALID");
 
     // Update approval if not set to max uint256
     if (es.allowances[_from][msg.sender] != uint256(-1)) {

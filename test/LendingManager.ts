@@ -176,6 +176,17 @@ describe("LendingManager", function() {
         await timeTraveler.revertSnapshot();
     });
 
+    describe("Constructor", async() => {
+        it("Should fail when lending registry is set to zero address", async() => {
+            const promise = deployContract(signers[0], LendingManagerArtifact, [constants.AddressZero, pie.address]);
+            await expect(promise).to.be.revertedWith("INVALID_LENDING_REGISTRY");
+        });
+        it("Should fail when basket is set to zero address", async() => {
+            const promise = deployContract(signers[0], LendingManagerArtifact, [lendingRegistry.address, constants.AddressZero]);
+            await expect(promise).to.be.revertedWith("INVALID_BASKET");
+        });
+    });
+
     describe("Lending", async() => {
         describe("Aave", async() => {
             it("Lending less than max should work", async() => {

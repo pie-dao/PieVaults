@@ -21,6 +21,8 @@ contract LendingManager is Ownable {
         @param _basket Address of the pool/pie/basket to manage
     */
     constructor(address _lendingRegistry, address _basket) public {
+        require(_lendingRegistry != address(0), "INVALID_LENDING_REGISTRY");
+        require(_basket != address(0), "INVALID_BASKET");
         lendingRegistry = LendingRegistry(_lendingRegistry);
         basket = IExperiPie(_basket);
     }

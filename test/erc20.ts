@@ -9,6 +9,7 @@ import { Erc20Facet, BasketFacet, DiamondFactoryContract } from "../typechain";
 import {IExperiPieFactory} from "../typechain/IExperiPieFactory";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
+import { parseEther } from "ethers/lib/utils";
 
 chai.use(solidity);
 
@@ -181,6 +182,9 @@ describe("ERC20Facet", function() {
           await experiPie.approve(account2, constants.WeiPerEther);
           await experiPie.approve(account2, 0);
         });
+        it("Approving the zero address should fail", async() => {
+          await expect(experiPie.approve(constants.AddressZero, parseEther("1"))).to.be.revertedWith("SPENDER_INVALID");
+        });
     });
     describe("increaseApproval", async() => {
       it("Should emit event", async () => {
@@ -204,6 +208,9 @@ describe("ERC20Facet", function() {
         await expect(experiPie.increaseApproval(account2, constants.WeiPerEther)).to.be.revertedWith(
           "SafeMath: addition overflow"
         );
+      });
+      it("Increasing approval to the zero address should fail", async() => {
+        await expect(experiPie.increaseApproval(constants.AddressZero, parseEther("10"))).to.be.revertedWith("SPENDER_INVALID");
       });
     });
     describe("decreaseApproval", async() => {
@@ -229,6 +236,9 @@ describe("ERC20Facet", function() {
         await experiPie.decreaseApproval(account2, constants.WeiPerEther.mul(2));
         const approvalAmount = await experiPie.allowance(account, account2);
         expect(approvalAmount).to.eq(constants.Zero);
+      });
+      it("Decreasing approval to the zero address should fail", async() => {
+        await expect(experiPie.decreaseApproval(constants.AddressZero, parseEther("1"))).to.be.revertedWith("SPENDER_INVALID");
       });
     });
     describe("transferFrom", async () => {

@@ -54,12 +54,14 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     override
     returns (bool)
   {
+    require(_spender != address(0), "SPENDER_INVALID");
     LibERC20Storage.erc20Storage().allowances[msg.sender][_spender] = _amount;
     emit Approval(msg.sender, _spender, _amount);
     return true;
   }
 
   function increaseApproval(address _spender, uint256 _amount) external override returns (bool) {
+    require(_spender != address(0), "SPENDER_INVALID");
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
     es.allowances[msg.sender][_spender] = es.allowances[msg.sender][_spender].add(_amount);
     emit Approval(msg.sender, _spender, es.allowances[msg.sender][_spender]);
@@ -67,6 +69,7 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
   }
 
   function decreaseApproval(address _spender, uint256 _amount) external override returns (bool) {
+    require(_spender != address(0), "SPENDER_INVALID");
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
     uint256 oldValue = es.allowances[msg.sender][_spender];
     if (_amount > oldValue) {

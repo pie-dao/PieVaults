@@ -161,6 +161,8 @@ describe("RSIManager", function() {
             longToken.address,
             shortTokenKey,
             longTokenKey,
+            parseEther("30"),
+            parseEther("70"),
             priceFeed.address,
             pie.address,
             synthetix.address
@@ -173,6 +175,56 @@ describe("RSIManager", function() {
 
     beforeEach(async() => {
         await timeTraveler.revertSnapshot();
+    });
+
+    describe("constructor", async() => {
+        it("Deploying with a RSI bottom bigger than RSI top should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("30"),
+                parseEther("29"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("RSI bottom should be bigger than RSI top");
+        });
+
+        it("Deploying with a RSI bottom below zero should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                -1,
+                parseEther("29"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("RSI bottom should be bigger than 0");
+        });
+
+        it("Deploying with a RSI top above 100 should should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("10"),
+                parseEther("101"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("RSI top should be less than 100");
+        });
     });
 
     describe("long", async() => {

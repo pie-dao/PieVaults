@@ -143,9 +143,6 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     address _to,
     uint256 _amount
   ) internal {
-    if (_to == address(0)) {
-      return LibERC20.burn(msg.sender, _amount);
-    }
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
     es.balances[_from] = es.balances[_from].sub(_amount);

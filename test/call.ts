@@ -129,6 +129,19 @@ describe("CallFacet", function() {
             const difference = userBalanceAfter.sub(userBalanceBefore);
             expect(difference).to.eq(parseEther("9"));
         });
+        it("Sending ether while not having enough balance should throw an error", async() => {
+            let ether = await ethers.provider.getBalance(experiPie.address);
+            expect(ether).to.eq("0");
+            
+            await signers[0].sendTransaction({to: experiPie.address, value: parseEther("10")});
+        
+            ether = await ethers.provider.getBalance(experiPie.address);
+            expect(ether).to.eq(parseEther("10"));
+
+            const user = await signers[4].getAddress();
+        
+            await expect(experiPie.call([user], ["0x00"], [parseEther("10.1")])).to.be.revertedWith("ETH_BALANCE_TOO_LOW");
+        });
         it("Send contract erc20 token", async () => {
             let balance = await testTokens[0].balanceOf(experiPie.address);
             expect(balance).to.eq(0);

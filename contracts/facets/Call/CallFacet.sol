@@ -99,6 +99,7 @@ contract CallFacet is ReentryProtection, ICallFacet {
     bytes memory _calldata,
     uint256 _value
   ) internal {
+    require(address(this).balance >= _value, "ETH_BALANCE_TOO_LOW");
     (bool success, ) = _target.call{ value: _value }(_calldata);
     require(success, "CALL_FAILED");
     emit Call(_target, _calldata, _value);

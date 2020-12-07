@@ -90,18 +90,20 @@ describe("CallFacet", function() {
 
     describe("Call test", async () => {
         it("Test lock call", async () => {
-            const latestBlock = await ethers.provider.getBlockNumber();
+            const lockBlock = (await ethers.provider.getBlockNumber()) + 100;
             
-            const call = await experiPie.populateTransaction.setLock(latestBlock - 1);
+            const call = await experiPie.populateTransaction.setLock(lockBlock);
 
             await experiPie.call(
               [call.to],
               [call.data],
               [0]
             );
-    
+            
+            const lockBlockValue = await experiPie.getLockBlock();
             const lock = await experiPie.getLock();
-            expect(lock).to.be.false;
+            expect(lockBlockValue).to.eq(lockBlock);
+            expect(lock).to.be.true;
         });
         it("Send contract ether", async () => {
             let ether = await ethers.provider.getBalance(experiPie.address);

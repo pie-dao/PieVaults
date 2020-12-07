@@ -514,7 +514,7 @@ describe("BasketFacet", function() {
         it("Adding a token which is already in the pool should fail", async() => {
           await expect(experiPie.addToken(testTokens[0].address)).to.be.revertedWith("TOKEN_ALREADY_IN_POOL");
         });
-        it.only("Adding more than max tokens should fail", async() => {
+        it("Adding more than max tokens should fail", async() => {
           const tokens = await experiPie.getTokens();
           for(let i = 0; i < 30 - tokens.length; i++) {
             const token = await (deployContract(signers[0], MockTokenArtifact, ["Mock", "Mock"])) as MockToken;

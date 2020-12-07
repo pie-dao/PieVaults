@@ -21,6 +21,18 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
+    require(
+      bytes(es.name).length == 0 &&
+      bytes(es.symbol).length == 0,
+      "ALREADY_INITIALIZED"
+    );
+
+    require(
+      bytes(_name).length != 0 &&
+      bytes(_symbol).length != 0,
+      "INVALID_PARAMS"
+    );
+
     require(msg.sender == ds.contractOwner, "Must own the contract.");
 
     LibERC20.mint(msg.sender, _initialSupply);

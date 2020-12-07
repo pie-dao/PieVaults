@@ -19,11 +19,13 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     uint256 public constant MAX_EXIT_FEE = 10**17; // 10%
     uint256 public constant MAX_ANNUAL_FEE = 10**17; // 10%
 
-    
+    // Assuming a block gas limit of 12M this allows for a gas consumption per token of roughly 333k allowing 2M of overhead for addtional operations
+    uint256 public constant MAX_TOKENS = 30;
 
     function addToken(address _token) external override protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         require(!bs.inPool[_token], "TOKEN_ALREADY_IN_POOL");
+        require(bs.tokens.length < MAX_TOKENS, "TOKEN_LIMIT_REACHED");
         // Enforce minimum to avoid rounding errors; (Minimum value is the same as in Balancer)
         require(balance(_token) >= MIN_AMOUNT, "BALANCE_TOO_SMALL");
 
@@ -46,7 +48,6 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
             if(address(bs.tokens[i]) == _token) {
                 bs.tokens[i] = bs.tokens[bs.tokens.length - 1];
                 bs.tokens.pop();
-
                 break;
             }
         }

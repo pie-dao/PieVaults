@@ -20,8 +20,12 @@ contract CallFacet is ReentryProtection, ICallFacet {
     _;
   }
 
-  function addCaller(address _caller) external override {
+  modifier onlyOwner() {
     require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
+    _;
+  }
+
+  function addCaller(address _caller) external override onlyOwner {
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
     require(!callStorage.canCall[_caller], "IS_ALREADY_CALLER");
@@ -32,8 +36,7 @@ contract CallFacet is ReentryProtection, ICallFacet {
     emit CallerAdded(_caller);
   }
 
-  function removeCaller(address _caller) external override {
-    require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
+  function removeCaller(address _caller) external override onlyOwner {
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
     require(callStorage.canCall[_caller], "IS_NOT_CALLER");

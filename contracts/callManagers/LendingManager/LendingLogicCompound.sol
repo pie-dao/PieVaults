@@ -13,6 +13,7 @@ contract LendingLogicCompound is ILendingLogic {
     bytes32 public constant PROTOCOL = keccak256(abi.encodePacked("Compound"));
 
     constructor(address _lendingRegistry) {
+        require(_lendingRegistry != address(0), "INVALID_LENDING_REGISTRY");
         lendingRegistry = LendingRegistry(_lendingRegistry);
     }
 

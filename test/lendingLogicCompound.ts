@@ -62,6 +62,11 @@ describe("LendingLogicCompound", function() {
         await timeTraveler.revertSnapshot();
     });
 
+    it("Deploying with the lending registry to the zero address should fail", async() => {
+        const promise = deployContract(signers[0], LendingLogicCompoundArtifact, [constants.AddressZero]);
+        await expect(promise).to.be.revertedWith("INVALID_LENDING_REGISTRY");
+    });
+
     it("lend()", async() => {
         const calls = await lendingLogic.lend(token.address, mintAmount);
 

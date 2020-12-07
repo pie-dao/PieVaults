@@ -102,6 +102,7 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     }
 
     _transfer(_from, _to, _amount);
+    return true;
   }
 
   function allowance(address _owner, address _spender)

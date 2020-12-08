@@ -49,9 +49,18 @@ contract RSISynthetixManager {
         assetShortKey = _assetShortKey;
         assetLongKey = _assetLongKey;
 
+        require(_assetShort != address(0), "INVALID_ASSET_SHORT");
+        require(_assetLong != address(0), "INVALID_ASSET_LONG");
+        require(_assetShortKey != bytes32(0), "INVALID_ASSET_SHORT_KEY");
+        require(_assetLongKey != bytes32(0), "INVALID_ASSET_LONG_KEY");
+
         require(_rsiBottom < _rsiTop, "RSI bottom should be bigger than RSI top");
         require(_rsiBottom > 0, "RSI bottom should be bigger than 0");
         require(_rsiTop < 100 * 10**18, "RSI top should be less than 100");
+
+        require(_priceFeed != address(0), "INVALID_PRICE_FEED");
+        require(_basket != address(0), "INVALID_BASKET");
+        require(_synthetix != address(0), "INVALID_SYNTHETIX");
 
         rsiBottom = _rsiBottom;
         rsiTop = _rsiTop;

@@ -74,6 +74,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setAnnualizedFee(uint256 _fee) external override protectedCall {
+        chargeOutstandingAnnualizedFee();
         require(_fee <= MAX_ANNUAL_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().annualizedFee = _fee;
         emit AnnualizedFeeSet(_fee);
@@ -84,6 +85,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setFeeBeneficiary(address _beneficiary) external override protectedCall {
+        chargeOutstandingAnnualizedFee();
         LibBasketStorage.basketStorage().feeBeneficiary = _beneficiary;
         emit FeeBeneficiarySet(_beneficiary);
     }

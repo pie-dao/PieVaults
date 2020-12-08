@@ -238,8 +238,9 @@ describe("CallFacet", function() {
 
     describe("Adding and removal of callers", async() => {
 
-        const PLACE_HOLDER_1 = "0x0000000000000000000000000000000000000001"
-        const PLACE_HOLDER_2 = "0x0000000000000000000000000000000000000002"
+        const PLACE_HOLDER_1 = "0x0000000000000000000000000000000000000001";
+        const PLACE_HOLDER_2 = "0x0000000000000000000000000000000000000002";
+        const PLACE_HOLDER_3 = "0x000000000000000000000000000000000000aaaa";
 
         it("Adding a caller should work", async() => {
             await experiPie.addCaller(PLACE_HOLDER_1);
@@ -267,6 +268,17 @@ describe("CallFacet", function() {
         });
         it("Adding a caller from a non owner should fail", async() => {
             await expect(experiPie.connect(signers[1]).addCaller(PLACE_HOLDER_1)).to.be.revertedWith("NOT_ALLOWED");
+        });
+        it("Adding more than 50 callers should fail", async() => {
+            for(let i = 0; i < 50; i ++) {
+                const address = utils.hexZeroPad([i + 1], 20);
+                await experiPie.addCaller(address);
+            }
+
+            await expect(experiPie.addCaller(PLACE_HOLDER_3)).to.be.revertedWith("TOO_MANY_CALLERS");
+        });
+        it("Adding the zero address as caller should fail", async() => {
+            await expect(experiPie.addCaller(constants.AddressZero)).to.be.revertedWith("INVALID_CALLER");
         });
         it("Removing a caller should work", async() => {
             await experiPie.addCaller(PLACE_HOLDER_1);

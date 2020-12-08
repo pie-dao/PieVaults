@@ -10,6 +10,8 @@ import "./LibCallStorage.sol";
 
 contract CallFacet is ReentryProtection, ICallFacet {
 
+  uint256 public constant MAX_CALLERS = 50;
+
   // uses modified call protection modifier to also allow whitelisted addresses to call
   modifier protectedCall() {
     require(
@@ -28,7 +30,9 @@ contract CallFacet is ReentryProtection, ICallFacet {
   function addCaller(address _caller) external override onlyOwner {
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
+    require(callStorage.callers.length < MAX_CALLERS, "TOO_MANY_CALLERS");
     require(!callStorage.canCall[_caller], "IS_ALREADY_CALLER");
+    require(_caller != address(0), "INVALID_CALLER");
 
     callStorage.callers.push(_caller);
     callStorage.canCall[_caller] = true;

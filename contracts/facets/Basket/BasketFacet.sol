@@ -120,7 +120,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
-        require(totalSupply.add(_amount) < this.getCap(), "MAX_POOL_CAP_REACHED");
+        require(totalSupply.add(_amount) <= this.getCap(), "MAX_POOL_CAP_REACHED");
 
         uint256 feeAmount = _amount.mul(bs.entryFee).div(10**18);
 

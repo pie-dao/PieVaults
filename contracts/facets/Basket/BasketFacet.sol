@@ -18,6 +18,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     uint256 public constant MAX_ENTRY_FEE = 10**17; // 10%
     uint256 public constant MAX_EXIT_FEE = 10**17; // 10%
     uint256 public constant MAX_ANNUAL_FEE = 10**17; // 10%
+    uint256 public constant 100_PERCENT = 10 ** 18;
 
     // Assuming a block gas limit of 12M this allows for a gas consumption per token of roughly 333k allowing 2M of overhead for addtional operations
     uint256 public constant MAX_TOKENS = 30;
@@ -95,7 +96,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setEntryFeeBeneficiaryShare(uint256 _share) external override protectedCall {
-        require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
+        require(_share <= 100_PERCENT, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().entryFeeBeneficiaryShare = _share;
         emit EntryFeeBeneficiaryShareSet(_share);
     }
@@ -105,7 +106,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setExitFeeBeneficiaryShare(uint256 _share) external override protectedCall {
-        require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
+        require(_share <= 100_PERCENT, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFeeBeneficiaryShare = _share;
         emit ExitFeeBeneficiaryShareSet(_share);
     }

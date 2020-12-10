@@ -21,6 +21,18 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     LibDiamond.DiamondStorage storage ds = LibDiamond.diamondStorage();
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
+    require(
+      bytes(es.name).length == 0 &&
+      bytes(es.symbol).length == 0,
+      "ALREADY_INITIALIZED"
+    );
+
+    require(
+      bytes(_name).length != 0 &&
+      bytes(_symbol).length != 0,
+      "INVALID_PARAMS"
+    );
+
     require(msg.sender == ds.contractOwner, "Must own the contract.");
 
     LibERC20.mint(msg.sender, _initialSupply);
@@ -54,8 +66,30 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     override
     returns (bool)
   {
+    require(_spender != address(0), "SPENDER_INVALID");
     LibERC20Storage.erc20Storage().allowances[msg.sender][_spender] = _amount;
     emit Approval(msg.sender, _spender, _amount);
+    return true;
+  }
+
+  function increaseApproval(address _spender, uint256 _amount) external override returns (bool) {
+    require(_spender != address(0), "SPENDER_INVALID");
+    LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+    es.allowances[msg.sender][_spender] = es.allowances[msg.sender][_spender].add(_amount);
+    emit Approval(msg.sender, _spender, es.allowances[msg.sender][_spender]);
+    return true;
+  }
+
+  function decreaseApproval(address _spender, uint256 _amount) external override returns (bool) {
+    require(_spender != address(0), "SPENDER_INVALID");
+    LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+    uint256 oldValue = es.allowances[msg.sender][_spender];
+    if (_amount > oldValue) {
+      es.allowances[msg.sender][_spender] = 0;
+    } else {
+      es.allowances[msg.sender][_spender] = oldValue.sub(_amount);
+    }
+    emit Approval(msg.sender, _spender, es.allowances[msg.sender][_spender]);
     return true;
   }
 
@@ -74,6 +108,7 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     uint256 _amount
   ) external override returns (bool) {
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
+    require(_from != address(0), "FROM_INVALID");
 
     // Update approval if not set to max uint256
     if (es.allowances[_from][msg.sender] != uint256(-1)) {
@@ -83,6 +118,7 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     }
 
     _transfer(_from, _to, _amount);
+    return true;
   }
 
   function allowance(address _owner, address _spender)
@@ -107,9 +143,6 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     address _to,
     uint256 _amount
   ) internal {
-    if (_to == address(0)) {
-      return LibERC20.burn(msg.sender, _amount);
-    }
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
     es.balances[_from] = es.balances[_from].sub(_amount);

@@ -12,6 +12,8 @@ library LibERC20 {
   event Transfer(address indexed from, address indexed to, uint256 amount);
 
   function mint(address _to, uint256 _amount) internal {
+    require(_to != address(0), "INVALID_TO_ADDRESS");
+
     LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
     es.balances[_to] = es.balances[_to].add(_amount);

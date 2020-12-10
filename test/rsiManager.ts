@@ -161,6 +161,8 @@ describe("RSIManager", function() {
             longToken.address,
             shortTokenKey,
             longTokenKey,
+            parseEther("30"),
+            parseEther("70"),
             priceFeed.address,
             pie.address,
             synthetix.address
@@ -173,6 +175,167 @@ describe("RSIManager", function() {
 
     beforeEach(async() => {
         await timeTraveler.revertSnapshot();
+    });
+
+    describe("constructor", async() => {
+        it("Deploying with an invalid assetShort should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                constants.AddressZero,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("30"),
+                parseEther("70"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("INVALID_ASSET_SHORT");
+        });
+        it("Deploying with an invalid assetLong should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                constants.AddressZero,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("30"),
+                parseEther("70"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("INVALID_ASSET_LONG");
+        });
+
+        it("Deploying with an invalid assetShortKey should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                "0x0000000000000000000000000000000000000000000000000000000000000000",
+                longTokenKey,
+                parseEther("30"),
+                parseEther("70"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("INVALID_ASSET_SHORT_KEY");
+        });
+
+        it("Deploying with an invalid assetLongKey should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                "0x0000000000000000000000000000000000000000000000000000000000000000",
+                parseEther("30"),
+                parseEther("70"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("INVALID_ASSET_LONG_KEY");
+        });
+
+        it("Deploying with a RSI bottom bigger than RSI top should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("30"),
+                parseEther("29"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("RSI bottom should be bigger than RSI top");
+        });
+
+        it("Deploying with a RSI bottom below zero should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                -1,
+                parseEther("29"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("RSI bottom should be bigger than 0");
+        });
+
+        it("Deploying with a RSI top above 100 should should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("10"),
+                parseEther("101"),
+                priceFeed.address,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("RSI top should be less than 100");
+        });
+
+        it("Deploying with an invalid pricefeed should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("30"),
+                parseEther("70"),
+                constants.AddressZero,
+                pie.address,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("INVALID_PRICE_FEED");
+        });
+
+        it("Deploying with an invalid basket should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("30"),
+                parseEther("70"),
+                priceFeed.address,
+                constants.AddressZero,
+                synthetix.address
+            ]);
+
+            await expect(promise).to.be.revertedWith("INVALID_BASKET");
+        });
+
+        it("Deploying with an invalid synthetix address should fail", async() => {
+            const promise = deployContract(signers[0], RSISynthetixManagerArtifact, [
+                shortToken.address,
+                longToken.address,
+                shortTokenKey,
+                longTokenKey,
+                parseEther("30"),
+                parseEther("70"),
+                priceFeed.address,
+                pie.address,
+                constants.AddressZero
+            ]);
+
+            await expect(promise).to.be.revertedWith("INVALID_SYNTHETIX");
+        });
     });
 
     describe("long", async() => {

@@ -9,6 +9,7 @@ import { Erc20Facet, BasketFacet, DiamondFactoryContract } from "../typechain";
 import {IExperiPieFactory} from "../typechain/IExperiPieFactory";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
+import { parseEther } from "ethers/lib/utils";
 
 chai.use(solidity);
 
@@ -181,6 +182,64 @@ describe("ERC20Facet", function() {
           await experiPie.approve(account2, constants.WeiPerEther);
           await experiPie.approve(account2, 0);
         });
+        it("Approving the zero address should fail", async() => {
+          await expect(experiPie.approve(constants.AddressZero, parseEther("1"))).to.be.revertedWith("SPENDER_INVALID");
+        });
+    });
+    describe("increaseApproval", async() => {
+      it("Should emit event", async () => {
+        await expect(experiPie.increaseApproval(account2, constants.WeiPerEther))
+          .to.emit(experiPie, "Approval")
+          .withArgs(account, account2, constants.WeiPerEther);
+      });
+      it("Should work when there was no approved amount before", async () => {
+        await experiPie.increaseApproval(account2, constants.WeiPerEther);
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.WeiPerEther);
+      });
+      it("Should work when there was an approved amount before", async () => {
+        await experiPie.increaseApproval(account2, constants.WeiPerEther);
+        await experiPie.increaseApproval(account2, constants.WeiPerEther);
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.WeiPerEther.mul(2));
+      });
+      it("Increasing approval beyond max uint256 should fail", async () => {
+        await experiPie.increaseApproval(account2, constants.MaxUint256);
+        await expect(experiPie.increaseApproval(account2, constants.WeiPerEther)).to.be.revertedWith(
+          "SafeMath: addition overflow"
+        );
+      });
+      it("Increasing approval to the zero address should fail", async() => {
+        await expect(experiPie.increaseApproval(constants.AddressZero, parseEther("10"))).to.be.revertedWith("SPENDER_INVALID");
+      });
+    });
+    describe("decreaseApproval", async() => {
+      beforeEach(async () => {
+        await experiPie.approve(account2, constants.WeiPerEther);
+      });
+      it("Should emit event", async () => {
+        await expect(experiPie.decreaseApproval(account2, constants.WeiPerEther))
+          .to.emit(experiPie, "Approval")
+          .withArgs(account, account2, constants.Zero);
+      });
+      it("Decreasing part of the approval should work", async () => {
+        await experiPie.decreaseApproval(account2, constants.WeiPerEther.div(2));
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.WeiPerEther.div(2));
+      });
+      it("Decreasing the entire approval should work", async () => {
+        await experiPie.decreaseApproval(account2, constants.WeiPerEther);
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.Zero);
+      });
+      it("Decreasing more than the approval amount should set approval to zero", async () => {
+        await experiPie.decreaseApproval(account2, constants.WeiPerEther.mul(2));
+        const approvalAmount = await experiPie.allowance(account, account2);
+        expect(approvalAmount).to.eq(constants.Zero);
+      });
+      it("Decreasing approval to the zero address should fail", async() => {
+        await expect(experiPie.decreaseApproval(constants.AddressZero, parseEther("1"))).to.be.revertedWith("SPENDER_INVALID");
+      });
     });
     describe("transferFrom", async () => {
         beforeEach(async () => {
@@ -222,5 +281,50 @@ describe("ERC20Facet", function() {
           const approvalAmount = await experiPie.allowance(account, account2);
           expect(approvalAmount).to.eq(constants.MaxUint256);
         });
+        it("Should fail when _from is zero address", async() => {
+          await expect(experiPie.transferFrom(constants.AddressZero, account, parseEther("1"))).to.be.revertedWith("FROM_INVALID");
+        });
+    });
+    describe("mint", async() => {
+      it("Minting from a non owner should fail", async() => {
+        await expect(experiPie.connect(signers[1]).mint(account2, parseEther("1"))).to.be.revertedWith("NOT_ALLOWED");
+      });
+      it("Minting to the zero address should fail", async() => {
+        await expect(experiPie.mint(constants.AddressZero, parseEther("1"))).to.be.revertedWith("INVALID_TO_ADDRESS");
+      });
+      it("Minting tokens should work", async() => {
+        const amount = parseEther("1");
+
+        const totalSupplyBefore = await experiPie.totalSupply();
+        const balanceBefore = await experiPie.balanceOf(account2);
+        
+        await experiPie.mint(account2, amount);
+
+        const totalSupplyAfter = await experiPie.totalSupply();
+        const balanceAfter = await experiPie.balanceOf(account2);
+
+        expect(balanceAfter).to.eq(balanceBefore.add(amount));
+        expect(totalSupplyAfter).eq(totalSupplyBefore.add(amount));
+      });
+    });
+    describe("burn", async() => {
+      beforeEach(async() => {
+        await experiPie.mint(account2, parseEther("1000"));
+      });
+      it("Burning tokens from a non owner address should fail", async() => {
+        await expect(experiPie.connect(account2).burn(account2, parseEther("1"))).to.be.revertedWith("NOT_ALLOWED");
+      });
+      it("Burning tokens should work", async() => {
+        const amount = parseEther("1");
+
+        const balanceBefore = await experiPie.balanceOf(account2);
+        const totalSupplyBefore = await experiPie.totalSupply();
+        await experiPie.burn(account2, amount);
+        const balanceAfter = await experiPie.balanceOf(account2);
+        const totalSupplyAfter = await experiPie.totalSupply();
+
+        expect(balanceAfter).to.eq(balanceBefore.sub(amount));
+        expect(totalSupplyAfter).to.eq(totalSupplyBefore.sub(amount))
+      });
     });
 })

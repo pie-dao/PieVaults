@@ -37,6 +37,7 @@ contract PieFactoryContract is Ownable {
     }
 
     function removeFacet(uint256 _index) external onlyOwner {
+        require(_index < defaultCut.length - 1, "INVALID_INDEX");
         emit FacetRemoved(defaultCut[_index]);
         defaultCut[_index] = defaultCut[defaultCut.length - 1];
         defaultCut.pop();

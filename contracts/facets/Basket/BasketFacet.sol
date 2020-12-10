@@ -36,7 +36,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         emit TokenAdded(_token);
     }
 
-    function removeToken(address _token) external override protectedCall {
+    function removeToken(address _token) external override virtual protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
 
         require(bs.inPool[_token], "TOKEN_NOT_IN_POOL");
@@ -247,7 +247,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     // Seperated balance function to allow yearn like strategies to be hooked up by inheriting from this contract and overriding
-    function balance(address _token) public view override returns(uint256) {
+    function balance(address _token) public view override virtual returns(uint256) {
         return IERC20(_token).balanceOf(address(this));
     }
 

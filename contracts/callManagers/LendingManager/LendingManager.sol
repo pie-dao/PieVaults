@@ -3,11 +3,12 @@ pragma experimental ABIEncoderV2;
 pragma solidity ^0.7.1;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/math/Math.sol";
 import "./LendingRegistry.sol";
 import "../../interfaces/IExperiPie.sol";
 
-contract LendingManager is Ownable {
+contract LendingManager is Ownable, ReentrancyGuard {
     using Math for uint256;
 
     LendingRegistry public lendingRegistry;
@@ -33,7 +34,7 @@ contract LendingManager is Ownable {
         @param _amount Amount of underlying to lend
         @param _protocol Bytes32 protocol key to lend to
     */
-    function lend(address _underlying, uint256 _amount, bytes32 _protocol) public onlyOwner {
+    function lend(address _underlying, uint256 _amount, bytes32 _protocol) public onlyOwner nonReentrant {
         // _amount or actual balance, whatever is less
         uint256 amount = _amount.min(IERC20(_underlying).balanceOf(address(basket)));
 
@@ -59,7 +60,7 @@ contract LendingManager is Ownable {
         @param _wrapped Address of the wrapped token
         @param _amount Amount of the wrapped token to unlend
     */
-    function unlend(address _wrapped, uint256 _amount) public onlyOwner {
+    function unlend(address _wrapped, uint256 _amount) public onlyOwner nonReentrant {
         // unlend token
          // _amount or actual balance, whatever is less
         uint256 amount = _amount.min(IERC20(_wrapped).balanceOf(address(basket)));
@@ -85,6 +86,7 @@ contract LendingManager is Ownable {
         @param _wrapped Address of the wrapped token to bounce to another protocol
         @param _amount Amount of the wrapped token to bounce to the other protocol
         @param _toProtocol Protocol to deposit bounced tokens in
+        @dev Uses reentrency protection of unlend() and lend()
     */
     function bounce(address _wrapped, uint256 _amount, bytes32 _toProtocol) external {
        unlend(_wrapped, _amount);

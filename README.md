@@ -107,6 +107,9 @@ function setUnderlyingToProtocolWrapped(address _underlying, bytes32 _protocol, 
 
 Lending logic contracts return the calls needed to lend or unlend from a protocol.
 
+## Deploying the factory
+`npx buidler deploy-pie-factory --network mainnet`
+
 ## Deploying an ExperiPie
 
 1. Create an allocation file like [this one](/allocations/mainnet/DLY.json)

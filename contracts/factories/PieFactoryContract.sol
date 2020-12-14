@@ -55,7 +55,10 @@ contract PieFactoryContract is Ownable {
         string memory _symbol,
         string memory _name
     ) external {
-        Diamond d = new Diamond(defaultCut, address(this));
+        Diamond d = new Diamond();
+        // TODO DEPLOY proxy 
+
+        d.initialize(defaultCut, address(this));
 
         pies.push(address(d));
         isPie[address(d)] = true;

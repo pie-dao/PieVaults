@@ -59,4 +59,19 @@ interface IERC20Facet {
         @param _symbol New token symbol
     */
     function setSymbol(string calldata _symbol) external;
+    
+    /**
+        @notice Increase the amount of tokens another address can spend
+        @param _spender Spender
+        @param _amount Amount to increase by
+    */
+    function increaseApproval(address _spender, uint256 _amount) external returns (bool);
+
+    /**
+        @notice Decrease the amount of tokens another address can spend
+        @param _spender Spender
+        @param _amount Amount to decrease by
+    */
+    function decreaseApproval(address _spender, uint256 _amount) external returns (bool);
+
 }

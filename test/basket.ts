@@ -6,7 +6,7 @@ import { Signer, constants, BigNumber, utils, Contract, BytesLike } from "ethers
 import BasketFacetArtifact from "../artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "../artifacts/ERC20Facet.json";
 import MockTokenArtifact from "../artifacts/MockToken.json";
-import { Erc20Facet, BasketFacet, DiamondFactoryContract, MockToken } from "../typechain";
+import { Erc20Facet, BasketFacet, DiamondFactoryContract, MockToken, MockTokenFactory } from "../typechain";
 import {IExperiPieFactory} from "../typechain/IExperiPieFactory";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
@@ -514,6 +514,21 @@ describe("BasketFacet", function() {
         it("Adding a token which is already in the pool should fail", async() => {
           await expect(experiPie.addToken(testTokens[0].address)).to.be.revertedWith("TOKEN_ALREADY_IN_POOL");
         });
+        it("Adding more than max tokens should fail", async() => {
+          const tokens = await experiPie.getTokens();
+          for(let i = 0; i < 30 - tokens.length; i++) {
+            const token = await (deployContract(signers[0], MockTokenArtifact, ["Mock", "Mock"])) as MockToken;
+            await token.mint(parseEther("1000000"), account);
+            await token.transfer(experiPie.address, parseEther("1"));
+            await experiPie.addToken(token.address);
+          }
+
+          const token = await (deployContract(signers[0], MockTokenArtifact, ["Mock", "Mock"])) as MockToken;
+          await token.mint(parseEther("1000000"), account);
+          await token.transfer(experiPie.address, parseEther("1"));
+          
+          await expect(experiPie.addToken(token.address)).to.revertedWith("TOKEN_LIMIT_REACHED");
+        });
         it("Removing a token", async() => {
           const tokensBefore = await experiPie.getTokens();
           await experiPie.removeToken(testTokens[1].address);
@@ -565,9 +580,16 @@ describe("BasketFacet", function() {
 
           // zero because no beneficiary
           expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(0)
-          await experiPie.setFeeBeneficiary(await signers[1].getAddress())
-          // only fee for 1 year
-          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.eq(parseEther("2"))
+
+          const tx2 = await experiPie.setFeeBeneficiary(await signers[1].getAddress())
+  
+          timestamp = (await ethers.provider.getBlock(tx2.blockNumber)).timestamp;
+          await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
+          await ethers.provider.send("evm_mine", []);
+          
+          // only fee for 1 year (small rounding error due to block time being off)
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.gt(parseEther("2"))
+          expect(await experiPie.calcOutStandingAnnualizedFee()).to.be.lt(parseEther("2.00000000127"));
         })
         it("outStandingAnnualizedFee, 2 years", async() => {
           // year 1
@@ -577,12 +599,15 @@ describe("BasketFacet", function() {
           await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
           tx = await experiPie.chargeOutstandingAnnualizedFee()
           timestamp = (await ethers.provider.getBlock(tx.blockNumber)).timestamp;
-          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.eq(balanceY1)
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.gt(balanceY1)
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.lt(balanceY1.add("64687975647"))
           // year 2 (compounding, original balance + new fee + fee on previous fee)
           const balanceY2 = balanceY1.add(parseEther("2")).add(parseEther("2").div(100).mul(2));
           await ethers.provider.send("evm_setNextBlockTimestamp", [timestamp + 60*60*24*365]);
           await experiPie.chargeOutstandingAnnualizedFee()
-          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.eq(balanceY2)
+          // * small discrepency due to inacurate block time
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.gt(balanceY2)
+          expect(await experiPie.balanceOf(await signers[1].getAddress())).to.be.lte(balanceY2.add("65981735159"));
         })
       })
       describe("Fee setters", async () => {

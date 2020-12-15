@@ -13,6 +13,7 @@ contract LendingLogicAave is ILendingLogic {
     uint16 public referralCode;
 
     constructor(address _lendingPool, uint16 _referralCode) {
+        require(_lendingPool != address(0), "LENDING_POOL_INVALID");
         lendingPool = IAaveLendingPool(_lendingPool);
         referralCode = _referralCode;
     }

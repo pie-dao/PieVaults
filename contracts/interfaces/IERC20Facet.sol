@@ -49,6 +49,18 @@ interface IERC20Facet {
     ) external;
 
     /**
+        @notice Set the token name of the contract. Can only be called by the contract owner or the contract itself
+        @param _name New token name
+    */
+    function setName(string calldata _name) external;
+
+    /**
+        @notice Set the token symbol of the contract. Can only be called by the contract owner or the contract itself
+        @param _symbol New token symbol
+    */
+    function setSymbol(string calldata _symbol) external;
+    
+    /**
         @notice Increase the amount of tokens another address can spend
         @param _spender Spender
         @param _amount Amount to increase by
@@ -61,4 +73,5 @@ interface IERC20Facet {
         @param _amount Amount to decrease by
     */
     function decreaseApproval(address _spender, uint256 _amount) external returns (bool);
+
 }

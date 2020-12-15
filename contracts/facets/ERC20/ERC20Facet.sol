@@ -45,8 +45,16 @@ contract ERC20Facet is IERC20, IERC20Facet, CallProtection {
     return LibERC20Storage.erc20Storage().name;
   }
 
+  function setName(string calldata _name) external override protectedCall {
+    LibERC20Storage.erc20Storage().name = _name;
+  }
+
   function symbol() external view override returns (string memory) {
     return LibERC20Storage.erc20Storage().symbol;
+  }
+
+  function setSymbol(string calldata _symbol) external override protectedCall {
+    LibERC20Storage.erc20Storage().symbol = _symbol;
   }
 
   function decimals() external pure override returns (uint8) {

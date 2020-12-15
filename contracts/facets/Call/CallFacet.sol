@@ -10,6 +10,8 @@ import "./LibCallStorage.sol";
 
 contract CallFacet is ReentryProtection, ICallFacet {
 
+  uint256 public constant MAX_CALLERS = 50;
+
   // uses modified call protection modifier to also allow whitelisted addresses to call
   modifier protectedCall() {
     require(
@@ -20,11 +22,17 @@ contract CallFacet is ReentryProtection, ICallFacet {
     _;
   }
 
-  function addCaller(address _caller) external override {
+  modifier onlyOwner() {
     require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
+    _;
+  }
+
+  function addCaller(address _caller) external override onlyOwner {
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
+    require(callStorage.callers.length < MAX_CALLERS, "TOO_MANY_CALLERS");
     require(!callStorage.canCall[_caller], "IS_ALREADY_CALLER");
+    require(_caller != address(0), "INVALID_CALLER");
 
     callStorage.callers.push(_caller);
     callStorage.canCall[_caller] = true;
@@ -32,8 +40,7 @@ contract CallFacet is ReentryProtection, ICallFacet {
     emit CallerAdded(_caller);
   }
 
-  function removeCaller(address _caller) external override {
-    require(msg.sender == LibDiamond.diamondStorage().contractOwner, "NOT_ALLOWED");
+  function removeCaller(address _caller) external override onlyOwner {
     LibCallStorage.CallStorage storage callStorage = LibCallStorage.callStorage();
 
     require(callStorage.canCall[_caller], "IS_NOT_CALLER");
@@ -96,9 +103,10 @@ contract CallFacet is ReentryProtection, ICallFacet {
     bytes memory _calldata,
     uint256 _value
   ) internal {
+    require(address(this).balance >= _value, "ETH_BALANCE_TOO_LOW");
     (bool success, ) = _target.call{ value: _value }(_calldata);
     require(success, "CALL_FAILED");
-    emit Call(_target, _calldata, _value);
+    emit Call(msg.sender, _target, _calldata, _value);
   }
 
   function canCall(address _caller) external view override returns (bool) {

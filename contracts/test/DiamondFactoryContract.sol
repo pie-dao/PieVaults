@@ -14,7 +14,8 @@ contract DiamondFactoryContract {
         address _owner,
         IDiamondCut.FacetCut[] memory _diamondCut
     ) public returns (address) {
-        Diamond d = new Diamond(_diamondCut, _owner);
+        Diamond d = new Diamond();
+        d.initialize(_diamondCut, _owner);
 
         diamonds.push(address(d));
         isDiamond[address(d)] = true;

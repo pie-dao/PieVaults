@@ -53,6 +53,11 @@ describe("LendingLogicAave", function() {
         await timeTraveler.revertSnapshot();
     });
 
+    it("Deploying with lendingPool set to the zero address should fail", async() => {
+        const promise = deployContract(signers[0], LendingLogicAaveArtifact, [constants.AddressZero, 0]);
+        await expect(promise).to.be.revertedWith("LENDING_POOL_INVALID");
+    });
+
     it("lend()", async() => {
         const calls = await lendingLogic.lend(token.address, mintAmount);
 

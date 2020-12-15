@@ -90,18 +90,20 @@ describe("CallFacet", function() {
 
     describe("Call test", async () => {
         it("Test lock call", async () => {
-            const latestBlock = await ethers.provider.getBlockNumber();
+            const lockBlock = (await ethers.provider.getBlockNumber()) + 100;
             
-            const call = await experiPie.populateTransaction.setLock(latestBlock - 1);
+            const call = await experiPie.populateTransaction.setLock(lockBlock);
 
             await experiPie.call(
               [call.to],
               [call.data],
               [0]
             );
-    
+            
+            const lockBlockValue = await experiPie.getLockBlock();
             const lock = await experiPie.getLock();
-            expect(lock).to.be.false;
+            expect(lockBlockValue).to.eq(lockBlock);
+            expect(lock).to.be.true;
         });
         it("Send contract ether", async () => {
             let ether = await ethers.provider.getBalance(experiPie.address);
@@ -126,6 +128,19 @@ describe("CallFacet", function() {
         
             const difference = userBalanceAfter.sub(userBalanceBefore);
             expect(difference).to.eq(parseEther("9"));
+        });
+        it("Sending ether while not having enough balance should throw an error", async() => {
+            let ether = await ethers.provider.getBalance(experiPie.address);
+            expect(ether).to.eq("0");
+            
+            await signers[0].sendTransaction({to: experiPie.address, value: parseEther("10")});
+        
+            ether = await ethers.provider.getBalance(experiPie.address);
+            expect(ether).to.eq(parseEther("10"));
+
+            const user = await signers[4].getAddress();
+        
+            await expect(experiPie.call([user], ["0x00"], [parseEther("10.1")])).to.be.revertedWith("ETH_BALANCE_TOO_LOW");
         });
         it("Send contract erc20 token", async () => {
             let balance = await testTokens[0].balanceOf(experiPie.address);
@@ -223,8 +238,9 @@ describe("CallFacet", function() {
 
     describe("Adding and removal of callers", async() => {
 
-        const PLACE_HOLDER_1 = "0x0000000000000000000000000000000000000001"
-        const PLACE_HOLDER_2 = "0x0000000000000000000000000000000000000002"
+        const PLACE_HOLDER_1 = "0x0000000000000000000000000000000000000001";
+        const PLACE_HOLDER_2 = "0x0000000000000000000000000000000000000002";
+        const PLACE_HOLDER_3 = "0x000000000000000000000000000000000000aaaa";
 
         it("Adding a caller should work", async() => {
             await experiPie.addCaller(PLACE_HOLDER_1);
@@ -252,6 +268,17 @@ describe("CallFacet", function() {
         });
         it("Adding a caller from a non owner should fail", async() => {
             await expect(experiPie.connect(signers[1]).addCaller(PLACE_HOLDER_1)).to.be.revertedWith("NOT_ALLOWED");
+        });
+        it("Adding more than 50 callers should fail", async() => {
+            for(let i = 0; i < 50; i ++) {
+                const address = utils.hexZeroPad([i + 1], 20);
+                await experiPie.addCaller(address);
+            }
+
+            await expect(experiPie.addCaller(PLACE_HOLDER_3)).to.be.revertedWith("TOO_MANY_CALLERS");
+        });
+        it("Adding the zero address as caller should fail", async() => {
+            await expect(experiPie.addCaller(constants.AddressZero)).to.be.revertedWith("INVALID_CALLER");
         });
         it("Removing a caller should work", async() => {
             await experiPie.addCaller(PLACE_HOLDER_1);

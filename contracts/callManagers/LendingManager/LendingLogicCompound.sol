@@ -10,10 +10,12 @@ import "../../interfaces/ICToken.sol";
 contract LendingLogicCompound is ILendingLogic {
 
     LendingRegistry public lendingRegistry;
-    bytes32 public constant PROTOCOL = keccak256(abi.encodePacked("Compound"));
+    bytes32 public immutable protocolKey;
 
-    constructor(address _lendingRegistry) {
+    constructor(address _lendingRegistry, bytes32 _protocolKey) {
+        require(_lendingRegistry != address(0), "INVALID_LENDING_REGISTRY");
         lendingRegistry = LendingRegistry(_lendingRegistry);
+        protocolKey = _protocolKey;
     }
 
     function lend(address _underlying, uint256 _amount) external view override returns(address[] memory targets, bytes[] memory data) {
@@ -23,7 +25,7 @@ contract LendingLogicCompound is ILendingLogic {
         data = new bytes[](3);
 
 
-        address cToken = lendingRegistry.underlyingToProtocolWrapped(_underlying, PROTOCOL);
+        address cToken = lendingRegistry.underlyingToProtocolWrapped(_underlying, protocolKey);
 
         // zero out approval to be sure
         targets[0] = _underlying;

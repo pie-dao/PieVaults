@@ -13,6 +13,7 @@ contract LendingLogicCompound is ILendingLogic {
     bytes32 public immutable protocolKey;
 
     constructor(address _lendingRegistry, bytes32 _protocolKey) {
+        require(_lendingRegistry != address(0), "INVALID_LENDING_REGISTRY");
         lendingRegistry = LendingRegistry(_lendingRegistry);
         protocolKey = _protocolKey;
     }

@@ -18,12 +18,15 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     uint256 public constant MAX_ENTRY_FEE = 10**17; // 10%
     uint256 public constant MAX_EXIT_FEE = 10**17; // 10%
     uint256 public constant MAX_ANNUAL_FEE = 10**17; // 10%
+    uint256 public constant HUNDRED_PERCENT = 10 ** 18;
 
-    
+    // Assuming a block gas limit of 12M this allows for a gas consumption per token of roughly 333k allowing 2M of overhead for addtional operations
+    uint256 public constant MAX_TOKENS = 30;
 
     function addToken(address _token) external override protectedCall {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         require(!bs.inPool[_token], "TOKEN_ALREADY_IN_POOL");
+        require(bs.tokens.length < MAX_TOKENS, "TOKEN_LIMIT_REACHED");
         // Enforce minimum to avoid rounding errors; (Minimum value is the same as in Balancer)
         require(balance(_token) >= MIN_AMOUNT, "BALANCE_TOO_SMALL");
 
@@ -41,17 +44,14 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         bs.inPool[_token] = false;
 
         // remove token from array
-        // TODO consider limiting max amount of tokens to mitigate running out of gas.
         for(uint256 i; i < bs.tokens.length; i ++) {
             if(address(bs.tokens[i]) == _token) {
                 bs.tokens[i] = bs.tokens[bs.tokens.length - 1];
                 bs.tokens.pop();
-
+                emit TokenRemoved(_token);
                 break;
             }
         }
-
-        emit TokenRemoved(_token);
     }
 
     function setEntryFee(uint256 _fee) external override protectedCall {
@@ -75,6 +75,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setAnnualizedFee(uint256 _fee) external override protectedCall {
+        chargeOutstandingAnnualizedFee();
         require(_fee <= MAX_ANNUAL_FEE, "FEE_TOO_BIG");
         LibBasketStorage.basketStorage().annualizedFee = _fee;
         emit AnnualizedFeeSet(_fee);
@@ -85,6 +86,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setFeeBeneficiary(address _beneficiary) external override protectedCall {
+        chargeOutstandingAnnualizedFee();
         LibBasketStorage.basketStorage().feeBeneficiary = _beneficiary;
         emit FeeBeneficiarySet(_beneficiary);
     }
@@ -94,7 +96,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setEntryFeeBeneficiaryShare(uint256 _share) external override protectedCall {
-        require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
+        require(_share <= HUNDRED_PERCENT, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().entryFeeBeneficiaryShare = _share;
         emit EntryFeeBeneficiaryShareSet(_share);
     }
@@ -104,7 +106,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     function setExitFeeBeneficiaryShare(uint256 _share) external override protectedCall {
-        require(_share <= 10**18, "FEE_SHARE_TOO_BIG");
+        require(_share <= HUNDRED_PERCENT, "FEE_SHARE_TOO_BIG");
         LibBasketStorage.basketStorage().exitFeeBeneficiaryShare = _share;
         emit ExitFeeBeneficiaryShareSet(_share);
     }
@@ -119,7 +121,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         uint256 totalSupply = LibERC20Storage.erc20Storage().totalSupply;
-        require(totalSupply.add(_amount) < this.getCap(), "MAX_POOL_CAP_REACHED");
+        require(totalSupply.add(_amount) <= this.getCap(), "MAX_POOL_CAP_REACHED");
 
         uint256 feeAmount = _amount.mul(bs.entryFee).div(10**18);
 

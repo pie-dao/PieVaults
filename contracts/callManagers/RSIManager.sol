@@ -14,6 +14,11 @@ contract RSISynthetixManager {
     bytes32 public immutable assetShortKey;
     bytes32 public immutable assetLongKey;
 
+    // Value under which to go long (30 * 10**18 == 30)
+    int256 public immutable rsiBottom;
+    // Value under which to go short
+    int256 public immutable rsiTop;
+
     IPriceReferenceFeed public immutable priceFeed;
     IExperiPie public immutable basket;
     ISynthetix public immutable synthetix;
@@ -33,6 +38,8 @@ contract RSISynthetixManager {
         address _assetLong,
         bytes32 _assetShortKey,
         bytes32 _assetLongKey,
+        int256 _rsiBottom,
+        int256 _rsiTop,
         address _priceFeed,
         address _basket,
         address _synthetix
@@ -41,6 +48,23 @@ contract RSISynthetixManager {
         assetLong = _assetLong;
         assetShortKey = _assetShortKey;
         assetLongKey = _assetLongKey;
+
+        require(_assetShort != address(0), "INVALID_ASSET_SHORT");
+        require(_assetLong != address(0), "INVALID_ASSET_LONG");
+        require(_assetShortKey != bytes32(0), "INVALID_ASSET_SHORT_KEY");
+        require(_assetLongKey != bytes32(0), "INVALID_ASSET_LONG_KEY");
+
+        require(_rsiBottom < _rsiTop, "RSI bottom should be bigger than RSI top");
+        require(_rsiBottom > 0, "RSI bottom should be bigger than 0");
+        require(_rsiTop < 100 * 10**18, "RSI top should be less than 100");
+
+        require(_priceFeed != address(0), "INVALID_PRICE_FEED");
+        require(_basket != address(0), "INVALID_BASKET");
+        require(_synthetix != address(0), "INVALID_SYNTHETIX");
+
+        rsiBottom = _rsiBottom;
+        rsiTop = _rsiTop;
+
         priceFeed = IPriceReferenceFeed(_priceFeed);
         basket = IExperiPie(_basket);
         synthetix = ISynthetix(_synthetix);
@@ -51,11 +75,11 @@ contract RSISynthetixManager {
         RoundData memory roundData = readLatestRound();
         require(roundData.updatedAt > 0, "Round not complete");
 
-        if(roundData.answer <= 30 * 10**18) {
+        if(roundData.answer <= rsiBottom) {
             // long
             long();
             return;
-        } else if(roundData.answer >= 70 * 10**18) {
+        } else if(roundData.answer >= rsiTop) {
             // Short
             short();
             return;

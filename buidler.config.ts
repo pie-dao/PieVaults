@@ -7,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactory, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory } from "./typechain";
+import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactory, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingLogicCream, LendingLogicCreamFactory, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory } from "./typechain";
 
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
@@ -281,9 +281,19 @@ task("deploy-lending-logic-compound")
   .setAction(async(taskArgs, {ethers}) => {
     const signers = await ethers.getSigners();
     
-    const lendingLogicCompound = await (new LendingLogicCompoundFactory(signers[0])).deploy(taskArgs.lendingRegistry);
+    const lendingLogicCompound = await (new LendingLogicCompoundFactory(signers[0])).deploy(taskArgs.lendingRegistry, "0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a1144761c7");
 
     console.log(`Deployed lendingLogicCompound at: ${lendingLogicCompound.address}`);
+});
+
+task("deploy-lending-logic-cream")
+  .addParam("lendingRegistry", "address of the lending registry")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    
+    const lendingLogicCream = await (new LendingLogicCreamFactory(signers[0])).deploy(taskArgs.lendingRegistry, "0x40e45d329815e79a55e43916f11f7a0112a31146f63a4fcaea413df0567a0bb2");
+
+    console.log(`Deployed lendingLogicCream at: ${lendingLogicCream.address}`);
 });
 
 task("deploy-lending-logic-aave")

@@ -1,42 +1,42 @@
 {
-    "name": "PieDAO DeFi Large Cap Yield Test",
-    "symbol": "DLY TEST",
+    "name": "PieDAO DeFi Yield",
+    "symbol": "DXY",
     "initialSupply": "1000000000000000000",
     "tokens": [
         {   
             "name": "LINK",
             "address": "0x514910771af9ca656af840dff83e8264ecf986ca",
-            "amount": "16054774435422292"
+            "amount": "17818356417502441"
         },
         {   
             "name": "YFI",
             "address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
-            "amount": "12041044684758"
+            "amount": "10263213630474"
         },
         {   
             "name": "AAVE",
             "address": "0x7fc66500c84a76ad7e9c93437bfc5ac33e2ddae9",
-            "amount": "3061174324462127"
+            "amount": "2802127799270877"
         },
         {   
             "name": "UNI",
             "address": "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984",
-            "amount": "47290900863702030"
+            "amount": "47426568858774771"
         },
         {   
             "name": "SNX",
             "address": "0xc011a73ee8576fb46f5e1c5751ca3b9fe0af2a6f",
-            "amount": "33472175484516584"
+            "amount": "33063201807631104"
         },
         {   
             "name": "COMP",
             "address": "0xc00e94cb662c3520282e6f5717214004a7f26888",
-            "amount": "1100982755706992"
+            "amount": "1209080354869925"
         },
         {   
             "name": "MKR",
             "address": "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
-            "amount": "202475702258756"
+            "amount": "247432938797059"
         }
     ]
 }

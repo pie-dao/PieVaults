@@ -112,3 +112,4 @@ Lending logic contracts return the calls needed to lend or unlend from a protoco
 1. Create an allocation file like [this one](/allocations/mainnet/DLY.json)
 2. run `npx buidler deploy-pie-from-factory --allocation [PATH_TO_ALLOCATION] --factory [FACTORY_ADDRESS] --network mainnet`
 3. Copy the tx hash and search on Etherscan to find the address
+4. Verify the contract: `npx buidler verify [PIE_ADDRESS] --constructor-args ./verify/experiPie.js` --network mainnet

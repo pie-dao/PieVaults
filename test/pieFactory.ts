@@ -9,10 +9,11 @@ import CallFacetArtifact from "../artifacts/CallFacet.json";
 import DiamondCutFacetArtifact from "../artifacts/DiamondCutFacet.json";
 import DiamondLoupeFacetArtifact from "../artifacts/DiamondLoupeFacet.json";
 import OwnershipFacetArtifact from "../artifacts/OwnershipFacet.json";
+import DiamondArtifact from "../artifacts/Diamond.json";
 
 import PieFactoryContractArtifact from "../artifacts/PieFactoryContract.json";
 import MockTokenArtifact from "../artifacts/MockToken.json";
-import { Erc20Facet, BasketFacet, CallFacet, DiamondFactoryContract, MockToken, DiamondCutFacet, DiamondLoupeFacet, OwnershipFacet, PieFactoryContract } from "../typechain";
+import { Erc20Facet, BasketFacet, CallFacet, DiamondFactoryContract, MockToken, DiamondCutFacet, DiamondLoupeFacet, OwnershipFacet, PieFactoryContract, Diamond } from "../typechain";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
 import { parseEther } from "ethers/lib/utils";
@@ -94,6 +95,11 @@ describe("PieFactoryContract", function() {
         ];
 
         pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact)) as PieFactoryContract;
+
+        const diamondImplementation = await (deployContract(signers[0], DiamondArtifact)) as Diamond;
+        await diamondImplementation.initialize([], constants.AddressZero);
+
+        await pieFactory.setDiamondImplementation(diamondImplementation.address);
 
         // Add default facets
         for(const facet of diamondCut) {

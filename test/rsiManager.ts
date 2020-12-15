@@ -14,6 +14,7 @@ import PieFactoryContractArtifact from "../artifacts/PieFactoryContract.json";
 import MockSynthetixArtifact from "../artifacts/MockSynthetix.json";
 import RSISynthetixManagerArtifact from "../artifacts/RSISynthetixManager.json";
 import ManualPriceReferenceFeedArtifact from "../artifacts/ManualPriceReferenceFeed.json";
+import DiamondArtifact from "../artifacts/Diamond.json";
 
 import { 
     Erc20Facet,
@@ -29,6 +30,7 @@ import {
     RsiSynthetixManager,
     RsiSynthetixManagerFactory,
     ManualPriceReferenceFeed,
+    Diamond,
 } from "../typechain";
 
 import { IExperiPie } from "../typechain/IExperiPie";
@@ -120,6 +122,10 @@ describe("RSIManager", function() {
         ];
 
         pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact)) as PieFactoryContract;
+
+        const diamondImplementation = await(deployContract(signers[0], DiamondArtifact)) as Diamond;
+        diamondImplementation.initialize([], constants.AddressZero);
+        pieFactory.setDiamondImplementation(diamondImplementation.address);
 
         // Add default facets
         for(const facet of diamondCut) {

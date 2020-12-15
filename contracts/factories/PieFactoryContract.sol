@@ -5,6 +5,7 @@ pragma experimental ABIEncoderV2;
 import "diamond-2/contracts/Diamond.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@pie-dao/proxy/contracts/PProxy.sol";
 
 import "../interfaces/IExperiPie.sol";
 
@@ -14,6 +15,7 @@ contract PieFactoryContract is Ownable {
     address[] public pies;
     mapping(address => bool) public isPie;
     address public defaultController;
+    address public diamondImplementation;
 
     IDiamondCut.FacetCut[] public defaultCut;
 
@@ -48,6 +50,11 @@ contract PieFactoryContract is Ownable {
         emit FacetAdded(_facet);
     }
 
+    // Diamond should be Initialized to prevent it from being selfdestructed
+    function setDiamondImplementation(address _diamondImplementation) external onlyOwner {
+        diamondImplementation = _diamondImplementation;
+    }
+
     function bakePie(
         address[] memory _tokens,
         uint256[] memory _amounts,
@@ -55,8 +62,10 @@ contract PieFactoryContract is Ownable {
         string memory _symbol,
         string memory _name
     ) external {
-        Diamond d = new Diamond();
-        // TODO DEPLOY proxy 
+        PProxy proxy = new PProxy();
+        Diamond d = Diamond(address(proxy));
+
+        proxy.setImplementation(diamondImplementation);
 
         d.initialize(defaultCut, address(this));
 
@@ -88,6 +97,7 @@ contract PieFactoryContract is Ownable {
         // Send minted pie to msg.sender
         pie.transfer(msg.sender, _initialSupply);
         pie.transferOwnership(defaultController);
+        proxy.setProxyOwner(defaultController);
 
         emit PieCreated(address(d), msg.sender, pies.length - 1);
     }

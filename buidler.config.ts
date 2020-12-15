@@ -7,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, DiamondCutFacet, DiamondFactory, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory } from "./typechain";
+import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactory, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory } from "./typechain";
 
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
@@ -16,6 +16,7 @@ import DiamondCutFacetArtifact from "./artifacts/DiamondCutFacet.json";
 import DiamondLoupeFacetArtifact from "./artifacts/DiamondLoupeFacet.json";
 import OwnershipFacetArtifact from "./artifacts/OwnershipFacet.json";
 import PieFactoryContractArtifact from "./artifacts/PieFactoryContract.json";
+import DiamondArtifact from "./artifacts/Diamond.json";
 import { IExperiPieFactory } from "./typechain/IExperiPieFactory";
 import { Ierc20Factory } from "./typechain/Ierc20Factory";
 import { LendingLogicCompoundFactory } from "./typechain/LendingLogicCompoundFactory";
@@ -242,6 +243,13 @@ task("deploy-pie-factory")
     console.log("deploying factory");
     const pieFactory = (await deployContract(signers[0], PieFactoryContractArtifact, [] , overrides)) as PieFactoryContract;
     console.log(`Factory deployed at: ${pieFactory.address}`);
+
+    const diamondImplementation = await deployContract(signers[0], DiamondArtifact, [], overrides) as Diamond;
+    await diamondImplementation.initialize([], constants.AddressZero);
+
+    console.log(`Diamond implementation deployed at: ${diamondImplementation.address}`);
+
+    await pieFactory.setDiamondImplementation(diamondImplementation.address);
 
     // Add default facets
     for(const facet of diamondCut) {

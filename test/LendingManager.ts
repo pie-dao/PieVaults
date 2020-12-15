@@ -11,6 +11,7 @@ import DiamondLoupeFacetArtifact from "../artifacts/DiamondLoupeFacet.json";
 import OwnershipFacetArtifact from "../artifacts/OwnershipFacet.json";
 
 import LendingManagerArtifact from "../artifacts/LendingManager.json";
+import DiamondArtifact from "../artifacts/Diamond.json";
 
 import TimeTraveler from "../utils/TimeTraveler";
 import { parseEther, formatBytes32String } from "ethers/lib/utils";
@@ -37,7 +38,8 @@ import {
     LendingRegistry,
     LendingRegistryFactory,
     PieFactoryContractFactory,
-    LendingManager
+    LendingManager,
+    Diamond
 } from "../typechain";
 import { IExperiPieFactory } from "../typechain/IExperiPieFactory";
 import { IExperiPie } from "../typechain/IExperiPie";
@@ -139,6 +141,10 @@ describe("LendingManager", function() {
         }
 
         await pieFactory.setDefaultController(account);
+        
+        const diamondImplementation = await(deployContract(signers[0], DiamondArtifact)) as Diamond;
+        diamondImplementation.initialize([], constants.AddressZero);
+        pieFactory.setDiamondImplementation(diamondImplementation.address);
 
         await token.approve(pieFactory.address, constants.MaxUint256);
 

@@ -1,0 +1,42 @@
+{
+    "name": "PieDAO Yearn Ecosystem Pie",
+    "symbol": "YPIE",
+    "initialSupply": "1000000000000000000",
+    "tokens": [
+        {   
+            "name": "YFI",
+            "address": "0x0bc529c00C6401aEF6D220BE8C6Ea1667F6Ad93e",
+            "amount": "14452955629426"
+        },
+        {   
+            "name": "KP3R",
+            "address": "0x1ceb5cb57c4d4e2b2433641b95dd330a33185a44",
+            "amount": "212851765549382"
+        },
+        {   
+            "name": "COVER",
+            "address": "0x5d8d9f5b96f4438195be9b99eee6118ed4304286",
+            "amount": "47586416933150"
+        },
+        {   
+            "name": "SUSHI",
+            "address": "0x6b3595068778dd592e39a122f4f5a5cf09c90fe2",
+            "amount": "128880866425993000"
+        },
+        {   
+            "name": "CREAM",
+            "address": "0x2ba592f78db6436527729929aaf6c908497cb200",
+            "amount": "664195242508496"
+        },
+        {   
+            "name": "PICKLE",
+            "address": "0x429881672b9ae42b8eba0e26cd9c73711b891ca5",
+            "amount": "1509705248023010"
+        },
+        {   
+            "name": "AKRO",
+            "address": "0x8ab7404063ec4dbcfd4598215992dc3f8ec853d7",
+            "amount": "3086274068399100000"
+        }
+    ]
+}

@@ -35,10 +35,10 @@ contract StakingLogicSushi is ILendingLogic {
         targets[1] = _underlying;
         data[1] = abi.encodeWithSelector(underlying.approve.selector, SushiBar, _amount);
 
-        // Deposit into Compound
+        // Stake in Sushi Bar
         targets[2] = SushiBar;
 
-        data[2] =  abi.encodeWithSelector(ICToken.enter.selector, _amount);
+        data[2] =  abi.encodeWithSelector(IXSushi.enter.selector, _amount);
 
         return(targets, data);
     }
@@ -47,7 +47,7 @@ contract StakingLogicSushi is ILendingLogic {
         data = new bytes[](1);
 
         targets[0] = _wrapped;
-        data[0] = abi.encodeWithSelector(ICToken.leave.selector, _amount);
+        data[0] = abi.encodeWithSelector(IXSushi.leave.selector, _amount);
         
         return(targets, data);
     }

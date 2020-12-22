@@ -7,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory } from "./typechain";
+import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
 import CallFacetArtifact from "./artifacts/CallFacet.json";
@@ -283,6 +283,18 @@ task("deploy-lending-logic-compound")
     const lendingLogicCompound = await (new LendingLogicCompoundFactory(signers[0])).deploy(taskArgs.lendingRegistry, taskArgs.protocolKey);
 
     console.log(`Deployed lendingLogicCompound at: ${lendingLogicCompound.address}`);
+});
+
+// TODO deploy sushi staking logic task
+task("deploy-stake-sushi")
+  .addParam("lendingRegistry", "address of the lending registry")
+  .addParam("protocolKey", "Bytes32 protocol key")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+
+    const stakeSushi = await new StakingLogicSushiFactory(signers[0]).deploy(taskArgs.lendingRegistry, taskArgs.protocolKey);
+
+    console.log(`Deployed stakeSushi at: ${stakeSushi.address}`);
 });
 
 task("deploy-lending-logic-aave")

@@ -22,6 +22,7 @@ chai.use(solidity);
 
 const mintAmount = parseEther("1000000");
 // keccak("Compound");
+const COMPOUND = "0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a1144761c7";
 const PLACEHOLDER_PROTOCOL = "0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a1144761c7";
 
 describe("LendingLogicCompound", function() {
@@ -39,7 +40,7 @@ describe("LendingLogicCompound", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const tokenFactory = new MockTokenFactory(signers[0]);
         const cTokenFactory = new MockCTokenFactory(signers[0]);
 
@@ -49,12 +50,12 @@ describe("LendingLogicCompound", function() {
         await token.mint(mintAmount, account);
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
-        lendingLogic = await deployContract(signers[0], LendingLogicCompoundArtifact, [lendingRegistry.address, PLACEHOLDER_PROTOCOL]) as LendingLogicCompound;
-        
+        lendingLogic = await deployContract(signers[0], LendingLogicCompoundArtifact, [lendingRegistry.address, COMPOUND]) as LendingLogicCompound;
+
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(cToken.address, PLACEHOLDER_PROTOCOL);
         await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, cToken.address);
-        
+
         await timeTraveler.snapshot();
     });
 
@@ -63,7 +64,10 @@ describe("LendingLogicCompound", function() {
     });
 
     it("Deploying with the lending registry to the zero address should fail", async() => {
-        const promise = deployContract(signers[0], LendingLogicCompoundArtifact, [constants.AddressZero, PLACEHOLDER_PROTOCOL]);
+        const promise = deployContract(signers[0], LendingLogicCompoundArtifact, [
+            constants.AddressZero,
+            COMPOUND
+        ]);
         await expect(promise).to.be.revertedWith("INVALID_LENDING_REGISTRY");
     });
 
@@ -105,7 +109,7 @@ describe("LendingLogicCompound", function() {
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
-        
+
         await signers[0].sendTransaction({
             to: calls.targets[0],
             data: calls.data[0]

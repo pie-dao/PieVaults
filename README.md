@@ -106,6 +106,7 @@ function setUnderlyingToProtocolWrapped(address _underlying, bytes32 _protocol, 
 | Aave     | 0xa9699be9874dcc3e11474d7d87b44bb314eb412a1960f1478100f7e2ccd4a6eb | 0x6Eb123bbd02324600AcF8a53575547EEB0a43135 |
 | Cream    | 0x40e45d329815e79a55e43916f11f7a0112a31146f63a4fcaea413df0567a0bb2 | 0x280190cF9E6519eB772a2f444fAF080523246DB3 |
 | XSushi   | 0xeafaa563273a4fdf984f5a9f1836dba7d5800658b802d449eb6ee18fce3d7c81 | 0x38e0eb114BEC4efcD8b1AC2C4b0c7335AFC1491D |
+| YGov     | 0xf910d6d870f2fa35287ad95c43b0b1ebabfab3cbb469515dc168cd48e2a9c218 | 0x4c5b1fC5dcE8A96f1eaF1Ffa3d86546c2c939909 |
 
 Lending logic contracts return the calls needed to lend or unlend from a protocol.
 

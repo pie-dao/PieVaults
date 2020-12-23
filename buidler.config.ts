@@ -22,6 +22,7 @@ import { LendingLogicCompoundFactory } from "./typechain/LendingLogicCompoundFac
 import { LendingRegistryFactory } from "./typechain/LendingRegistryFactory";
 import { LendingLogicAaveFactory } from "./typechain/LendingLogicAaveFactory";
 import { LendingManagerFactory } from "./typechain/LendingManagerFactory";
+import { StakingLogicYGovFactory } from "./typechain/StakingLogicYGovFactory";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
@@ -285,7 +286,6 @@ task("deploy-lending-logic-compound")
     console.log(`Deployed lendingLogicCompound at: ${lendingLogicCompound.address}`);
 });
 
-// TODO deploy sushi staking logic task
 task("deploy-stake-sushi")
   .addParam("lendingRegistry", "address of the lending registry")
   .addParam("protocolKey", "Bytes32 protocol key")
@@ -295,6 +295,17 @@ task("deploy-stake-sushi")
     const stakeSushi = await new StakingLogicSushiFactory(signers[0]).deploy(taskArgs.lendingRegistry, taskArgs.protocolKey);
 
     console.log(`Deployed stakeSushi at: ${stakeSushi.address}`);
+});
+
+task("deploy-stake-ygov")
+  .addParam("lendingRegistry", "address of the lending registry")
+  .addParam("protocolKey", "Bytes32 protocol key")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+
+    const stakeYGov = await new StakingLogicYGovFactory(signers[0]).deploy(taskArgs.lendingRegistry, taskArgs.protocolKey);
+
+    console.log(`Deployed stakeYGov at: ${stakeYGov.address}`);
 });
 
 task("deploy-lending-logic-aave")

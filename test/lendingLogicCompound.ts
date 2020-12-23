@@ -122,4 +122,24 @@ describe("LendingLogicCompound", function() {
         expect(cTokenBalance).to.eq(0);
     });
 
+    it("getAPRFromUnderlying()", async() => {
+        const supplyRate =  await cToken.supplyRatePerBlock();
+        expect(supplyRate).to.eq(20000000000);
+
+        await lendingLogic.setBlocksPerYear(2000000)
+
+        const apr = await lendingLogic.getAPRFromUnderlying(token.address);
+        expect(apr).to.eq(ethers.BigNumber.from("10").pow(16).mul(4)) // 4 percent
+    })
+
+    it("getAPRFromWrapped()", async() => {
+        const supplyRate =  await cToken.supplyRatePerBlock();
+        expect(supplyRate).to.eq(20000000000);
+
+        await lendingLogic.setBlocksPerYear(2000000)
+
+        const apr = await lendingLogic.getAPRFromWrapped(cToken.address);
+        expect(apr).to.eq(ethers.BigNumber.from("10").pow(16).mul(4)) // 4 percent
+    })
+
 });

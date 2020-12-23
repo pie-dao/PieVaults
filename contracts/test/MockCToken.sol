@@ -54,4 +54,8 @@ contract MockCToken is MockToken {
     function setErrorCode(uint256 _value) public {
         errorCode = _value;
     }
+
+    function supplyRatePerBlock() external view returns (uint256) {
+        return 20000000000;
+    }
 }

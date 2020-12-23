@@ -43,7 +43,7 @@ contract LendingLogicAave is ILendingLogic {
                 add(data, 32), // input buffer (starts after the first 32 bytes in the `data` array)
                 mload(data),   // input length (loaded from the first 32 bytes in the `data` array)
                 ret,           // output buffer
-                64             // output length
+                160             // output length
             )
             if iszero(success) {
                 revert(0, 0)

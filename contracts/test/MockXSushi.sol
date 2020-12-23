@@ -16,6 +16,13 @@ contract MockXSushi is MockToken {
         underlying = MockToken(_underlying);
     }
 
+    function mint(uint256 _amount) external {
+        require(underlying.transferFrom(msg.sender, address(this), _amount), "MockXSushi.mint: transferFrom failed");
+
+        uint256 mintAmount = _amount.mul(10**18).div(exchangeRate);
+        _mint(msg.sender, mintAmount);
+    }
+
     function enter(uint256 _amount) external {
         require(underlying.transferFrom(msg.sender, address(this), _amount), "MockXSushi.enter: transferFrom failed");
 

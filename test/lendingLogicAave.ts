@@ -118,7 +118,7 @@ describe("LendingLogicAave", function() {
     })
 
     it("getAPRFromWrapped()", async() => {
-        const apr = await lendingLogic.getAPRFromUnderlying(aToken.address);
+        const apr = await lendingLogic.getAPRFromWrapped(aToken.address);
         expect(apr).to.eq(ethers.BigNumber.from("10").pow(16)) // one percent
     })
 

@@ -19,4 +19,12 @@ contract MockLendingLogic is ILendingLogic {
         targets[0] = _wrapped;
         data[0] = bytes(abi.encode(_amount));
     }
+
+    function exchangeRate(address) external pure override returns(uint256) {
+        return 10**18;
+    }
+
+    function exchangeRateView(address) external pure override returns(uint256) {
+        return 10**18;
+    }
 }

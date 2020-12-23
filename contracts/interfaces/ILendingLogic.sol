@@ -20,4 +20,18 @@ interface ILendingLogic {
         @return data Calldata of the calls
     */
     function unlend(address _wrapped, uint256 _amount) external view returns(address[] memory targets, bytes[] memory data);
+
+    /**
+        @notice Get the underlying wrapped exchange rate
+        @param _wrapped Address of the wrapped token
+        @return The exchange rate
+    */
+    function exchangeRate(address _wrapped) external returns(uint256);
+
+    /**
+        @notice Get the underlying wrapped exchange rate in a view (non state changing) way
+        @param _wrapped Address of the wrapped token
+        @return The exchange rate
+    */
+    function exchangeRateView(address _wrapped) external view returns(uint256);
 }

@@ -52,4 +52,19 @@ contract StakingLogicSushi is ILendingLogic {
         return(targets, data);
     }
 
+    function exchangeRate(address _wrapped) external view override returns(uint256) {
+        return _exchangeRate(_wrapped);
+    }
+
+    function exchangeRateView(address _wrapped) external view override returns(uint256) {
+        return _exchangeRate(_wrapped);
+    }
+
+    function _exchangeRate(address _wrapped) internal view returns(uint256) {
+        IERC20 xToken = IERC20(_wrapped);
+        IERC20 token = IERC20(lendingRegistry.wrappedToUnderlying(_wrapped));
+
+        return token.balanceOf(_wrapped) * 10**18 / xToken.totalSupply();
+    }
+
 }

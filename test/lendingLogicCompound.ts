@@ -49,7 +49,7 @@ describe("LendingLogicCompound", function() {
         await token.mint(mintAmount, account);
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
-        lendingLogic = await deployContract(signers[0], LendingLogicCompoundArtifact, [lendingRegistry.address]) as LendingLogicCompound;
+        lendingLogic = await deployContract(signers[0], LendingLogicCompoundArtifact, [lendingRegistry.address, PLACEHOLDER_PROTOCOL]) as LendingLogicCompound;
         
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(cToken.address, PLACEHOLDER_PROTOCOL);
@@ -63,7 +63,7 @@ describe("LendingLogicCompound", function() {
     });
 
     it("Deploying with the lending registry to the zero address should fail", async() => {
-        const promise = deployContract(signers[0], LendingLogicCompoundArtifact, [constants.AddressZero]);
+        const promise = deployContract(signers[0], LendingLogicCompoundArtifact, [constants.AddressZero, PLACEHOLDER_PROTOCOL]);
         await expect(promise).to.be.revertedWith("INVALID_LENDING_REGISTRY");
     });
 

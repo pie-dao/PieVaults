@@ -49,7 +49,7 @@ describe("StakingLogicSushi", function() {
         await token.mint(mintAmount, account);
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
-        lendingLogic = await deployContract(signers[0], StakingLogicSushiArtifact, [lendingRegistry.address]) as StakingLogicSushi;
+        lendingLogic = await deployContract(signers[0], StakingLogicSushiArtifact, [lendingRegistry.address, PLACEHOLDER_PROTOCOL]) as StakingLogicSushi;
         
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(xSUSHI.address, PLACEHOLDER_PROTOCOL);
@@ -63,7 +63,7 @@ describe("StakingLogicSushi", function() {
     });
 
     it("Deploying with the lending registry to the zero address should fail", async() => {
-        const promise = deployContract(signers[0], StakingLogicSushiArtifact, [constants.AddressZero]);
+        const promise = deployContract(signers[0], StakingLogicSushiArtifact, [constants.AddressZero, PLACEHOLDER_PROTOCOL]);
         await expect(promise).to.be.revertedWith("INVALID_LENDING_REGISTRY");
     });
 

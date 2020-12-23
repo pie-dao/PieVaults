@@ -118,14 +118,12 @@ describe("LendingLogicCompound", function() {
         expect(cTokenBalance).to.eq(0);
     });
 
-    it.only("exchangeRate()", async() => {
-        const exchangeRate = await cToken.exchangeRate()
-        // 1 wrapped (8 decimals) = 0.02 (18 decimals)
-        expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(26).mul(2))
+    it("exchangeRate()", async() => {
+        await cToken.exchangeRateCurrent()
         await lendingLogic.exchangeRate(cToken.address);
     })
 
-    it.only("exchangeRateView()", async() => {
+    it("exchangeRateView()", async() => {
         const exchangeRate = await cToken.exchangeRateStored()
         // 1 wrapped (8 decimals) = 0.02 (18 decimals)
         expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(26).mul(2))

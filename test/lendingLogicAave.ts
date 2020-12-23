@@ -34,7 +34,7 @@ describe("LendingLogicAave", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const tokenFactory = new MockTokenFactory(signers[0]);
         const aTokenFactory = new MockATokenFactory(signers[0]);
 
@@ -96,7 +96,7 @@ describe("LendingLogicAave", function() {
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
-        
+
         await signers[0].sendTransaction({
             to: calls.targets[0],
             data: calls.data[0]
@@ -108,5 +108,17 @@ describe("LendingLogicAave", function() {
         expect(tokenBalance).to.eq(mintAmount);
         expect(aTokenBalance).to.eq(0);
     });
+
+    it("exchangeRate()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRate(aToken.address);
+        // 1 wrapped = 1
+        expect(exchangeRate).to.eq( ethers.BigNumber.from("10").pow(18))
+    })
+
+    it("exchangeRateView()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRateView(aToken.address);
+        // 1 wrapped == 1
+        expect(exchangeRate).to.eq( ethers.BigNumber.from("10").pow(18))
+    })
 
 });

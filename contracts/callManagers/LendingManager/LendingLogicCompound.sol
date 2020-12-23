@@ -42,17 +42,17 @@ contract LendingLogicCompound is ILendingLogic {
 
         return(targets, data);
     }
-    
+
     function unlend(address _wrapped, uint256 _amount) external view override returns(address[] memory targets, bytes[] memory data) {
         targets = new address[](1);
         data = new bytes[](1);
 
         targets[0] = _wrapped;
         data[0] = abi.encodeWithSelector(ICToken.redeem.selector, _amount);
-        
+
         return(targets, data);
     }
-    
+
     function exchangeRate(address _wrapped) external override returns(uint256) {
         return ICToken(_wrapped).exchangeRateCurrent();
     }

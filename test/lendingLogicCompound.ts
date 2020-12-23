@@ -39,7 +39,7 @@ describe("LendingLogicCompound", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const tokenFactory = new MockTokenFactory(signers[0]);
         const cTokenFactory = new MockCTokenFactory(signers[0]);
 
@@ -50,11 +50,11 @@ describe("LendingLogicCompound", function() {
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
         lendingLogic = await deployContract(signers[0], LendingLogicCompoundArtifact, [lendingRegistry.address, PLACEHOLDER_PROTOCOL]) as LendingLogicCompound;
-        
+
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(cToken.address, PLACEHOLDER_PROTOCOL);
         await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, cToken.address);
-        
+
         await timeTraveler.snapshot();
     });
 
@@ -105,7 +105,7 @@ describe("LendingLogicCompound", function() {
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
-        
+
         await signers[0].sendTransaction({
             to: calls.targets[0],
             data: calls.data[0]
@@ -117,5 +117,20 @@ describe("LendingLogicCompound", function() {
         expect(tokenBalance).to.eq(mintAmount);
         expect(cTokenBalance).to.eq(0);
     });
+
+    it.only("exchangeRate()", async() => {
+        const exchangeRate = await cToken.exchangeRate()
+        // 1 wrapped (8 decimals) = 0.02 (18 decimals)
+        expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(26).mul(2))
+        await lendingLogic.exchangeRate(cToken.address);
+    })
+
+    it.only("exchangeRateView()", async() => {
+        const exchangeRate = await cToken.exchangeRateStored()
+        // 1 wrapped (8 decimals) = 0.02 (18 decimals)
+        expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(26).mul(2))
+        const exchangeRateLending = await lendingLogic.exchangeRateView(cToken.address);
+        expect(exchangeRate).to.eq(exchangeRateLending)
+    })
 
 });

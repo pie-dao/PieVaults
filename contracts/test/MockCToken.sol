@@ -9,7 +9,8 @@ import "@openzeppelin/contracts/math/SafeMath.sol";
 
 contract MockCToken is MockToken, ICToken {
     using SafeMath for uint256;
-    uint256 public exchangeRate = 1 ether / 5;
+    // representable value taken from cEth
+    uint256 public exchangeRate = 200000000000000000000000000;
     MockToken public underlying;
     uint256 someValue;
 
@@ -53,7 +54,6 @@ contract MockCToken is MockToken, ICToken {
         errorCode = _value;
     }
 
-    
     function exchangeRateCurrent() external override returns(uint256) {
         // To make function state changing
         someValue ++;

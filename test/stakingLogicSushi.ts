@@ -39,7 +39,7 @@ describe("StakingLogicSushi", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const tokenFactory = new MockTokenFactory(signers[0]);
         const xSUSHIFactory = new MockXSushiFactory(signers[0]);
 
@@ -50,11 +50,11 @@ describe("StakingLogicSushi", function() {
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
         lendingLogic = await deployContract(signers[0], StakingLogicSushiArtifact, [lendingRegistry.address, PLACEHOLDER_PROTOCOL]) as StakingLogicSushi;
-        
+
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(xSUSHI.address, PLACEHOLDER_PROTOCOL);
         await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, xSUSHI.address);
-        
+
         await timeTraveler.snapshot();
     });
 
@@ -105,7 +105,7 @@ describe("StakingLogicSushi", function() {
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
-        
+
         await signers[0].sendTransaction({
             to: calls.targets[0],
             data: calls.data[0]

@@ -118,4 +118,14 @@ describe("StakingLogicSushi", function() {
         expect(xSUSHIBalance).to.eq(0);
     });
 
+    it("getAPRFromUnderlying()", async() => {
+        const apr = await lendingLogic.getAPRFromUnderlying(token.address);
+        expect(apr).to.eq(ethers.BigNumber.from("2").pow(256).sub(1))
+    })
+
+    it("getAPRFromWrapped()", async() => {
+        const apr = await lendingLogic.getAPRFromWrapped(xSUSHI.address);
+        expect(apr).to.eq(ethers.BigNumber.from("2").pow(256).sub(1))
+    })
+
 });

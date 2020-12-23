@@ -52,7 +52,7 @@ contract StakingLogicSushi is ILendingLogic {
         return(targets, data);
     }
 
-    function exchangeRate(address _wrapped) external override returns(uint256) {
+    function exchangeRate(address _wrapped) external view override returns(uint256) {
         return _exchangeRate(_wrapped);
     }
 

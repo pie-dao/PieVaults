@@ -32,8 +32,8 @@ describe("StakingLogicSushi", function() {
     let timeTraveler: TimeTraveler;
     let lendingLogic: StakingLogicSushi;
     let lendingRegistry: LendingRegistry;
-    let token: MockXSushi;
-    let cToken: MockXSushi;
+    let token: MockToken;
+    let xSUSHI: MockXSushi;
 
     before(async() => {
         signers = await ethers.getSigners();
@@ -41,10 +41,10 @@ describe("StakingLogicSushi", function() {
         timeTraveler = new TimeTraveler(ethereum);
         
         const tokenFactory = new MockTokenFactory(signers[0]);
-        const cTokenFactory = new MockXSushiFactory(signers[0]);
+        const xSUSHIFactory = new MockXSushiFactory(signers[0]);
 
         token = await tokenFactory.deploy("token", "token");
-        cToken = await cTokenFactory.deploy(token.address);
+        xSUSHI = await xSUSHIFactory.deploy(token.address);
 
         await token.mint(mintAmount, account);
 
@@ -52,8 +52,8 @@ describe("StakingLogicSushi", function() {
         lendingLogic = await deployContract(signers[0], StakingLogicSushiArtifact, [lendingRegistry.address]) as StakingLogicSushi;
         
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
-        await lendingRegistry.setWrappedToProtocol(cToken.address, PLACEHOLDER_PROTOCOL);
-        await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, cToken.address);
+        await lendingRegistry.setWrappedToProtocol(xSUSHI.address, PLACEHOLDER_PROTOCOL);
+        await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, xSUSHI.address);
         
         await timeTraveler.snapshot();
     });
@@ -89,19 +89,19 @@ describe("StakingLogicSushi", function() {
         });
 
         const tokenBalance = await token.balanceOf(account);
-        const cTokenBalance = await cToken.balanceOf(account);
+        const xSUSHIBalance = await xSUSHI.balanceOf(account);
 
         expect(tokenBalance).to.eq(0);
-        expect(cTokenBalance).to.eq(mintAmount.mul(5));
+        expect(xSUSHIBalance).to.eq(mintAmount.mul(5));
     });
 
     it("exit()", async() => {
-        await token.approve(cToken.address, constants.MaxUint256);
-        await cToken["mint(uint256)"](mintAmount);
+        await token.approve(xSUSHI.address, constants.MaxUint256);
+        await xSUSHI["mint(uint256)"](mintAmount);
 
-        expect(await cToken.balanceOf(account)).to.eq(mintAmount.mul(5));
+        expect(await xSUSHI.balanceOf(account)).to.eq(mintAmount.mul(5));
 
-        const calls = await lendingLogic.unlend(cToken.address, mintAmount.mul(5));
+        const calls = await lendingLogic.unlend(xSUSHI.address, mintAmount.mul(5));
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
@@ -112,10 +112,10 @@ describe("StakingLogicSushi", function() {
         })
 
         const tokenBalance = await token.balanceOf(account);
-        const cTokenBalance = await cToken.balanceOf(account);
+        const xSUSHIBalance = await xSUSHI.balanceOf(account);
 
         expect(tokenBalance).to.eq(mintAmount);
-        expect(cTokenBalance).to.eq(0);
+        expect(xSUSHIBalance).to.eq(0);
     });
 
 });

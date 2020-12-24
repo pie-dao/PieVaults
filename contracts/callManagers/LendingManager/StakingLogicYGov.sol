@@ -48,8 +48,16 @@ contract StakingLogicYGov is ILendingLogic {
 
         targets[0] = _wrapped;
         data[0] = abi.encodeWithSelector(IYVault.withdraw.selector, _amount);
-        
+
         return(targets, data);
+    }
+
+    function getAPRFromUnderlying(address _token) external view override returns(uint256) {
+        return uint256(-1);
+    }
+
+    function getAPRFromWrapped(address _token) external view override returns(uint256) {
+        return uint256(-1);
     }
 
 }

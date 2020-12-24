@@ -5,7 +5,7 @@ pragma solidity ^0.7.1;
 import "../interfaces/IAaveLendingPoolV2.sol";
 import "./MockToken.sol";
 
-contract MockAaveLendingPool is IAaveLendingPoolV2 {
+contract MockAaveLendingPoolV2 is IAaveLendingPoolV2 {
     IERC20 public token;
     MockToken public aToken;
 
@@ -24,7 +24,7 @@ contract MockAaveLendingPool is IAaveLendingPoolV2 {
         uint16 _referralCode
     ) external override {
         require(!revertDeposit, "Deposited revert");
-        require(token.transferFrom(msg.sender, address(aToken), _amount), "Transfer failed");
+        require(token.transferFrom(msg.sender, address(this), _amount), "Transfer failed");
         aToken.mint(_amount, msg.sender);
     }
 

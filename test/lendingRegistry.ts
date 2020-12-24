@@ -18,6 +18,7 @@ const PLACEHOLDER_2 = "0x0000000000000000000000000000000000000002";
 const PLACEHOLDER_3 = "0x0000000000000000000000000000000000000003";
 
 const PLACEHOLDER_PROTOCOL = formatBytes32String("PROTOCOL");
+const PLACEHOLDER_PROTOCOL2 = formatBytes32String("PROTOCOL2");
 
 describe("LendingRegistry", function() {
     this.timeout(300000000);
@@ -25,6 +26,7 @@ describe("LendingRegistry", function() {
     let account: string;
     let lendingRegistry: LendingRegistry;
     let mockLendingLogic: MockLendingLogic;
+    let mockLendingLogic2: MockLendingLogic;
     let signers: Signer[];
     let timeTraveler: TimeTraveler;
 
@@ -35,6 +37,7 @@ describe("LendingRegistry", function() {
 
         lendingRegistry = await deployContract(signers[0], LendingRegistryArtifact) as LendingRegistry;
         mockLendingLogic = await deployContract(signers[0], MockLendingLogicArtifact) as MockLendingLogic;
+        mockLendingLogic2 = await deployContract(signers[0], MockLendingLogicArtifact) as MockLendingLogic;
 
         await timeTraveler.snapshot();
     });
@@ -95,7 +98,7 @@ describe("LendingRegistry", function() {
 
         it("getLendTXData", async() => {
             const data = await lendingRegistry.getLendTXData(PLACEHOLDER_1, parseEther("1"), PLACEHOLDER_PROTOCOL) as any;
-            
+
             expect(data.targets[0]).to.eq(PLACEHOLDER_1);
             expect(BigNumber.from(data.data[0])).to.eq(parseEther("1"));
         });
@@ -119,4 +122,51 @@ describe("LendingRegistry", function() {
             await expect(lendingRegistry.getUnlendTXData(PLACEHOLDER_1, parseEther("1"))).to.be.revertedWith("NO_LENDING_LOGIC_SET");
         });
     });
+
+    describe("getBestApr", async() => {
+        it("should return defailt values with empty protocols", async() => {
+            const result = await lendingRegistry.getBestApr(PLACEHOLDER_1, []);
+
+            expect(result.apr).to.eq(0);
+            expect(result.protocol).to.eq(constants.HashZero);
+        });
+        it("should fail when no protocol is set", async() => {
+            await expect(lendingRegistry.getBestApr(PLACEHOLDER_1, [PLACEHOLDER_PROTOCOL])).to.be.revertedWith("NO_LENDING_LOGIC_SET");
+        });
+        it("should return result (single protocol)", async() => {
+            // underlying = PLACEHOLDER_1
+            // wrapped = PLACEHOLDER_2
+            const TWO_PERCENT = ethers.BigNumber.from("10").pow(16).mul(2)
+            await mockLendingLogic.setAPR(TWO_PERCENT)
+
+            await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, mockLendingLogic.address);
+            await lendingRegistry.setUnderlyingToProtocolWrapped(PLACEHOLDER_1,  PLACEHOLDER_PROTOCOL, PLACEHOLDER_2);
+
+            const result = await lendingRegistry.getBestApr(PLACEHOLDER_1, [PLACEHOLDER_PROTOCOL])
+            expect(result.apr).to.eq(TWO_PERCENT);
+            expect(result.protocol).to.eq(PLACEHOLDER_PROTOCOL);
+        });
+        it("should return result (multiple protocols)", async() => {
+            // underlying = PLACEHOLDER_1
+            // wrapped = PLACEHOLDER_2
+            const TWO_PERCENT = ethers.BigNumber.from("10").pow(16).mul(2)
+            await mockLendingLogic.setAPR(TWO_PERCENT)
+            await mockLendingLogic2.setAPR(TWO_PERCENT.mul(2))
+
+            await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, mockLendingLogic.address);
+            await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL2, mockLendingLogic2.address);
+
+            await lendingRegistry.setUnderlyingToProtocolWrapped(PLACEHOLDER_1,  PLACEHOLDER_PROTOCOL, PLACEHOLDER_2);
+            await lendingRegistry.setUnderlyingToProtocolWrapped(PLACEHOLDER_1,  PLACEHOLDER_PROTOCOL2, PLACEHOLDER_2);
+
+            let result = await lendingRegistry.getBestApr(PLACEHOLDER_1, [PLACEHOLDER_PROTOCOL, PLACEHOLDER_PROTOCOL2])
+            expect(result.apr).to.eq(TWO_PERCENT.mul(2));
+            expect(result.protocol).to.eq(PLACEHOLDER_PROTOCOL2);
+
+            // test in call order reversed
+            result = await lendingRegistry.getBestApr(PLACEHOLDER_1, [PLACEHOLDER_PROTOCOL2, PLACEHOLDER_PROTOCOL])
+            expect(result.apr).to.eq(TWO_PERCENT.mul(2));
+            expect(result.protocol).to.eq(PLACEHOLDER_PROTOCOL2);
+        });
+    })
 });

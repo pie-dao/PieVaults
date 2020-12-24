@@ -8,16 +8,18 @@ import "./MockToken.sol";
 contract MockAToken is MockToken {
     IERC20 public token;
 
+    address public underlyingAssetAddress;
     bool public revertRedeem;
 
-    constructor(address _token) MockToken("MockAToken", "MATKN") public {
+    constructor(address _token) public MockToken("MockAToken", "MATKN") {
         token = IERC20(_token);
+        underlyingAssetAddress = _token;
     }
 
     function redeem(uint256 _amount) external {
         require(!revertRedeem, "Reverted");
 
-        if(_amount == uint256(-1)) {
+        if (_amount == uint256(-1)) {
             _amount = balanceOf(msg.sender);
         }
 

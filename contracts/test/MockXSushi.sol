@@ -5,7 +5,6 @@ pragma solidity ^0.7.1;
 import "./MockToken.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-
 contract MockXSushi is MockToken {
     using SafeMath for uint256;
     uint256 public exchangeRate = 1 ether / 5;

@@ -34,7 +34,7 @@ describe("LendingLogicAave", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const tokenFactory = new MockTokenFactory(signers[0]);
         const aTokenFactory = new MockATokenFactory(signers[0]);
 
@@ -96,7 +96,7 @@ describe("LendingLogicAave", function() {
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
-        
+
         await signers[0].sendTransaction({
             to: calls.targets[0],
             data: calls.data[0]
@@ -108,5 +108,30 @@ describe("LendingLogicAave", function() {
         expect(tokenBalance).to.eq(mintAmount);
         expect(aTokenBalance).to.eq(0);
     });
+
+    it("getAPRFromUnderlying()", async() => {
+        const reserveData  = await lendingPool.getReserveData(token.address);
+        expect(reserveData.liquidityRate).to.eq(ethers.BigNumber.from("10").pow(25)) // one percent
+
+        const apr = await lendingLogic.getAPRFromUnderlying(token.address);
+        expect(apr).to.eq(ethers.BigNumber.from("10").pow(16)) // one percent
+    })
+
+    it("getAPRFromWrapped()", async() => {
+        const apr = await lendingLogic.getAPRFromWrapped(aToken.address);
+        expect(apr).to.eq(ethers.BigNumber.from("10").pow(16)) // one percent
+    })
+    
+    it("exchangeRate()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRate(aToken.address);
+        // 1 wrapped = 1
+        expect(exchangeRate).to.eq( ethers.BigNumber.from("10").pow(18))
+    })
+
+    it("exchangeRateView()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRateView(aToken.address);
+        // 1 wrapped == 1
+        expect(exchangeRate).to.eq( ethers.BigNumber.from("10").pow(18))
+    })
 
 });

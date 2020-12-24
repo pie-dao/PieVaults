@@ -39,7 +39,7 @@ describe("StakingLogicSushi", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const tokenFactory = new MockTokenFactory(signers[0]);
         const xSUSHIFactory = new MockXSushiFactory(signers[0]);
 
@@ -50,11 +50,12 @@ describe("StakingLogicSushi", function() {
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
         lendingLogic = await deployContract(signers[0], StakingLogicSushiArtifact, [lendingRegistry.address, PLACEHOLDER_PROTOCOL]) as StakingLogicSushi;
-        
+
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(xSUSHI.address, PLACEHOLDER_PROTOCOL);
+        await lendingRegistry.setWrappedToUnderlying(xSUSHI.address, token.address);
         await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, xSUSHI.address);
-        
+
         await timeTraveler.snapshot();
     });
 
@@ -105,7 +106,7 @@ describe("StakingLogicSushi", function() {
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
-        
+
         await signers[0].sendTransaction({
             to: calls.targets[0],
             data: calls.data[0]
@@ -117,5 +118,31 @@ describe("StakingLogicSushi", function() {
         expect(tokenBalance).to.eq(mintAmount);
         expect(xSUSHIBalance).to.eq(0);
     });
+
+    it("getAPRFromUnderlying()", async() => {
+        const apr = await lendingLogic.getAPRFromUnderlying(token.address);
+        expect(apr).to.eq(ethers.BigNumber.from("2").pow(256).sub(1))
+    })
+
+    it("getAPRFromWrapped()", async() => {
+        const apr = await lendingLogic.getAPRFromWrapped(xSUSHI.address);
+        expect(apr).to.eq(ethers.BigNumber.from("2").pow(256).sub(1))
+    })
+    
+    it("exchangeRate()", async() => {
+        await token.approve(xSUSHI.address, constants.MaxUint256);
+        await xSUSHI["mint(uint256)"](mintAmount);
+
+        await lendingLogic.exchangeRate(xSUSHI.address)
+    })
+
+    it("exchangeRateView()", async() => {
+        await token.approve(xSUSHI.address, constants.MaxUint256);
+        await xSUSHI["mint(uint256)"](mintAmount);
+
+        const exchangeRate = await lendingLogic.exchangeRateView(xSUSHI.address);
+        // 1 xToken = 0.2
+        expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(16).mul(20))
+    })
 
 });

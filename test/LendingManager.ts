@@ -15,7 +15,7 @@ import DiamondArtifact from "../artifacts/Diamond.json";
 
 import TimeTraveler from "../utils/TimeTraveler";
 import { parseEther, formatBytes32String } from "ethers/lib/utils";
-import { 
+import {
     MockAToken,
     MockCToken,
     MockToken,
@@ -141,7 +141,7 @@ describe("LendingManager", function() {
         }
 
         await pieFactory.setDefaultController(account);
-        
+
         const diamondImplementation = await(deployContract(signers[0], DiamondArtifact)) as Diamond;
         diamondImplementation.initialize([], constants.AddressZero);
         pieFactory.setDiamondImplementation(diamondImplementation.address);
@@ -197,46 +197,46 @@ describe("LendingManager", function() {
         describe("Aave", async() => {
             it("Lending less than max should work", async() => {
                 const lendAmount = mintAmount.div(2);
-    
+
                 await lendingManager.lend(token.address, lendAmount, AAVE);
-    
+
                 const tokens = await pie.getTokens();
-    
+
                 expect(tokens.length).to.eq(2);
                 expect(tokens[0]).to.eq(token.address);
                 expect(tokens[1]).to.eq(aToken.address);
-    
+
                 const tokenBalance = await token.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-               
+
                 expect(tokenBalance).to.eq(lendAmount);
                 expect(aTokenBalance).to.eq(lendAmount);
             });
             it("Lending the max should work", async() => {
                 await lendingManager.lend(token.address, mintAmount, AAVE);
-    
+
                 const tokens = await pie.getTokens();
-    
+
                 expect(tokens.length).to.eq(1);
                 expect(tokens[0]).to.eq(aToken.address);
-    
+
                 const tokenBalance = await token.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-               
+
                 expect(tokenBalance).to.eq(0);
                 expect(aTokenBalance).to.eq(mintAmount);
             });
             it("Lending more than the max should lend the max", async() => {
                 await lendingManager.lend(token.address, mintAmount.add(parseEther("2")), AAVE);
-    
+
                 const tokens = await pie.getTokens();
-    
+
                 expect(tokens.length).to.eq(1);
                 expect(tokens[0]).to.eq(aToken.address);
-    
+
                 const tokenBalance = await token.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-               
+
                 expect(tokenBalance).to.eq(0);
                 expect(aTokenBalance).to.eq(mintAmount);
             });
@@ -245,44 +245,44 @@ describe("LendingManager", function() {
             it("Lending less than the max should work", async() => {
                 const lendAmount = mintAmount.div(2);
                 await lendingManager.lend(token.address, lendAmount, COMPOUND);
-    
+
                 const tokens = await pie.getTokens();
-    
+
                 expect(tokens.length).to.eq(2);
                 expect(tokens[0]).to.eq(token.address);
                 expect(tokens[1]).to.eq(cToken.address);
-    
+
                 const tokenBalance = await token.balanceOf(pie.address);
                 const cTokenBalance = await cToken.balanceOf(pie.address);
-               
+
                 expect(tokenBalance).to.eq(lendAmount);
                 expect(cTokenBalance).to.eq(lendAmount.mul(5));
             });
             it("Lending the max should work", async() => {
                 await lendingManager.lend(token.address, mintAmount, COMPOUND);
-    
+
                 const tokens = await pie.getTokens();
-    
+
                 expect(tokens.length).to.eq(1);
                 expect(tokens[0]).to.eq(cToken.address);
-    
+
                 const tokenBalance = await token.balanceOf(pie.address);
                 const cTokenBalance = await cToken.balanceOf(pie.address);
-               
+
                 expect(tokenBalance).to.eq(0);
                 expect(cTokenBalance).to.eq(mintAmount.mul(5));
             });
             it("Lending more than the max should lend the max", async() => {
                 await lendingManager.lend(token.address, mintAmount.add(parseEther("2")), COMPOUND);
-    
+
                 const tokens = await pie.getTokens();
-    
+
                 expect(tokens.length).to.eq(1);
                 expect(tokens[0]).to.eq(cToken.address);
-    
+
                 const tokenBalance = await token.balanceOf(pie.address);
                 const cTokenBalance = await cToken.balanceOf(pie.address);
-               
+
                 expect(tokenBalance).to.eq(0);
                 expect(cTokenBalance).to.eq(mintAmount.mul(5));
             });
@@ -298,7 +298,7 @@ describe("LendingManager", function() {
             it("Unlending less than the max should work", async() => {
                 const unlendAmount = mintAmount.div(2);
                 await lendingManager.unlend(aToken.address, unlendAmount);
-                
+
                 const tokens = await pie.getTokens();
 
                 expect(tokens.length).to.eq(2);
@@ -351,7 +351,7 @@ describe("LendingManager", function() {
             it("Unlending less than the max should work", async() => {
                 const unlendAmount = mintAmount.div(2).mul(5);
                 await lendingManager.unlend(cToken.address, unlendAmount);
-                
+
                 const tokens = await pie.getTokens();
 
                 expect(tokens.length).to.eq(2);
@@ -419,7 +419,7 @@ describe("LendingManager", function() {
 
                 const cTokenBalance = await cToken.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-                
+
                 expect(cTokenBalance).to.eq(bounceAmount);
                 expect(aTokenBalance).to.eq(mintAmount.div(2));
             });
@@ -434,7 +434,7 @@ describe("LendingManager", function() {
 
                 const cTokenBalance = await cToken.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-                
+
                 expect(cTokenBalance).to.eq(0);
                 expect(aTokenBalance).to.eq(mintAmount);
             });
@@ -449,7 +449,7 @@ describe("LendingManager", function() {
 
                 const cTokenBalance = await cToken.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-                
+
                 expect(cTokenBalance).to.eq(0);
                 expect(aTokenBalance).to.eq(mintAmount);
             });
@@ -473,7 +473,7 @@ describe("LendingManager", function() {
 
                 const cTokenBalance = await cToken.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-                
+
                 expect(cTokenBalance).to.eq(cTokenAmount);
                 expect(aTokenBalance).to.eq(bounceAmount);
             });
@@ -489,7 +489,7 @@ describe("LendingManager", function() {
 
                 const cTokenBalance = await cToken.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-                
+
                 expect(cTokenBalance).to.eq(cTokenAmount);
                 expect(aTokenBalance).to.eq(0);
             });
@@ -505,7 +505,7 @@ describe("LendingManager", function() {
 
                 const cTokenBalance = await cToken.balanceOf(pie.address);
                 const aTokenBalance = await aToken.balanceOf(pie.address);
-                
+
                 expect(cTokenBalance).to.eq(cTokenAmount);
                 expect(aTokenBalance).to.eq(0);
             });

@@ -63,7 +63,7 @@ contract LendingRegistry is Ownable {
     function setUnderlyingToProtocolWrapped(address _underlying, bytes32 _protocol, address _wrapped) onlyOwner external {
         underlyingToProtocolWrapped[_underlying][_protocol] = _wrapped;
         emit UnderlyingToProtocolWrappedSet(_underlying, _protocol, _wrapped);
-    } 
+    }
 
     /**
         @notice Get tx data to lend the underlying amount in a specific protocol
@@ -92,5 +92,32 @@ contract LendingRegistry is Ownable {
         require(address(lendingLogic) != address(0), "NO_LENDING_LOGIC_SET");
 
         return lendingLogic.unlend(_wrapped, _amount);
+    }
+
+    /**
+        @notice Get the beste apr for the give protocols
+        @dev returns default values if lending logic not found
+        @param _underlying Address of the underlying token
+        @param _protocols Array of protocols to include
+        @return apr The APR
+        @return protocol Protocol that provides the APR
+    */
+    function getBestApr(address _underlying, bytes32[] memory _protocols) external view returns(uint256 apr, bytes32 protocol) {
+        uint256 bestApr;
+        bytes32 bestProtocol;
+
+        for(uint256 i = 0; i < _protocols.length; i++) {
+            bytes32 protocol = _protocols[i];
+            ILendingLogic lendingLogic = ILendingLogic(protocolToLogic[protocol]);
+            require(address(lendingLogic) != address(0), "NO_LENDING_LOGIC_SET");
+
+            uint256 apr = lendingLogic.getAPRFromUnderlying(_underlying);
+            if (apr > bestApr) {
+                bestApr = apr;
+                bestProtocol = protocol;
+            }
+        }
+
+        return (bestApr, bestProtocol);
     }
 }

@@ -18,6 +18,14 @@ contract StakingLogicSushi is ILendingLogic {
         protocolKey = _protocolKey;
     }
 
+    function getAPRFromWrapped(address _token) public view override returns(uint256) {
+        return uint256(-1);
+    }
+
+    function getAPRFromUnderlying(address _token) external view override returns(uint256) {
+        return uint256(-1);
+    }
+
     function lend(address _underlying, uint256 _amount) external view override returns(address[] memory targets, bytes[] memory data) {
         IERC20 underlying = IERC20(_underlying);
 
@@ -48,8 +56,22 @@ contract StakingLogicSushi is ILendingLogic {
 
         targets[0] = _wrapped;
         data[0] = abi.encodeWithSelector(IXSushi.leave.selector, _amount);
-        
+
         return(targets, data);
+    }
+
+    function exchangeRate(address _wrapped) external view override returns(uint256) {
+        return _exchangeRate(_wrapped);
+    }
+
+    function exchangeRateView(address _wrapped) external view override returns(uint256) {
+        return _exchangeRate(_wrapped);
+    }
+
+    function _exchangeRate(address _wrapped) internal view returns(uint256) {
+        IERC20 xToken = IERC20(_wrapped);
+        IERC20 token = IERC20(lendingRegistry.wrappedToUnderlying(_wrapped));
+        return token.balanceOf(_wrapped) * 10**18 / xToken.totalSupply();
     }
 
 }

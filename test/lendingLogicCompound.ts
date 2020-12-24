@@ -142,4 +142,17 @@ describe("LendingLogicCompound", function() {
         expect(apr).to.eq(ethers.BigNumber.from("10").pow(16).mul(4)) // 4 percent
     })
 
+    it("exchangeRate()", async() => {
+        await cToken.exchangeRateCurrent()
+        await lendingLogic.exchangeRate(cToken.address);
+    })
+
+    it("exchangeRateView()", async() => {
+        const exchangeRate = await cToken.exchangeRateStored()
+        // 1 wrapped (8 decimals) = 0.2 (8 decimals)
+        expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(17).mul(2))
+        const exchangeRateLending = await lendingLogic.exchangeRateView(cToken.address);
+        expect(exchangeRate).to.eq(exchangeRateLending)
+    })
+
 });

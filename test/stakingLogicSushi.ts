@@ -53,6 +53,7 @@ describe("StakingLogicSushi", function() {
 
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(xSUSHI.address, PLACEHOLDER_PROTOCOL);
+        await lendingRegistry.setWrappedToUnderlying(xSUSHI.address, token.address);
         await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, xSUSHI.address);
 
         await timeTraveler.snapshot();
@@ -126,6 +127,22 @@ describe("StakingLogicSushi", function() {
     it("getAPRFromWrapped()", async() => {
         const apr = await lendingLogic.getAPRFromWrapped(xSUSHI.address);
         expect(apr).to.eq(ethers.BigNumber.from("2").pow(256).sub(1))
+    })
+    
+    it("exchangeRate()", async() => {
+        await token.approve(xSUSHI.address, constants.MaxUint256);
+        await xSUSHI["mint(uint256)"](mintAmount);
+
+        await lendingLogic.exchangeRate(xSUSHI.address)
+    })
+
+    it("exchangeRateView()", async() => {
+        await token.approve(xSUSHI.address, constants.MaxUint256);
+        await xSUSHI["mint(uint256)"](mintAmount);
+
+        const exchangeRate = await lendingLogic.exchangeRateView(xSUSHI.address);
+        // 1 xToken = 0.2
+        expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(16).mul(20))
     })
 
 });

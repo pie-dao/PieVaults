@@ -59,5 +59,13 @@ contract StakingLogicYGov is ILendingLogic {
     function getAPRFromWrapped(address _token) external view override returns(uint256) {
         return uint256(-1);
     }
+    
+    function exchangeRate(address _wrapped) external view override returns(uint256) {
+        return IYVault(_wrapped).getPricePerFullShare();
+    }
+
+    function exchangeRateView(address _wrapped) external view override returns(uint256) {
+        return IYVault(_wrapped).getPricePerFullShare();
+    }
 
 }

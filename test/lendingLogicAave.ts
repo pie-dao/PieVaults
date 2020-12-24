@@ -121,5 +121,17 @@ describe("LendingLogicAave", function() {
         const apr = await lendingLogic.getAPRFromWrapped(aToken.address);
         expect(apr).to.eq(ethers.BigNumber.from("10").pow(16)) // one percent
     })
+    
+    it("exchangeRate()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRate(aToken.address);
+        // 1 wrapped = 1
+        expect(exchangeRate).to.eq( ethers.BigNumber.from("10").pow(18))
+    })
+
+    it("exchangeRateView()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRateView(aToken.address);
+        // 1 wrapped == 1
+        expect(exchangeRate).to.eq( ethers.BigNumber.from("10").pow(18))
+    })
 
 });

@@ -85,4 +85,12 @@ contract LendingLogicAave is ILendingLogic {
         return(targets, data);
     }
 
+    function exchangeRate(address) external pure override returns(uint256) {
+        return 10**18;
+    }
+
+    function exchangeRateView(address) external pure override returns(uint256) {
+        return 10**18;
+    }
+
 }

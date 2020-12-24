@@ -39,7 +39,7 @@ describe("StakingLogicYGov", function() {
         signers = await ethers.getSigners();
         account = await signers[0].getAddress();
         timeTraveler = new TimeTraveler(ethereum);
-        
+
         const tokenFactory = new MockTokenFactory(signers[0]);
         const yGOVFactory = new MockYVaultFactory(signers[0]);
 
@@ -50,11 +50,11 @@ describe("StakingLogicYGov", function() {
 
         lendingRegistry = await (new LendingRegistryFactory(signers[0])).deploy();
         lendingLogic = await deployContract(signers[0], StakingLogicYGovArtifact, [lendingRegistry.address, PLACEHOLDER_PROTOCOL]) as StakingLogicYGov;
-        
+
         await lendingRegistry.setProtocolToLogic(PLACEHOLDER_PROTOCOL, lendingLogic.address);
         await lendingRegistry.setWrappedToProtocol(yGov.address, PLACEHOLDER_PROTOCOL);
         await lendingRegistry.setUnderlyingToProtocolWrapped(token.address, PLACEHOLDER_PROTOCOL, yGov.address);
-        
+
         await timeTraveler.snapshot();
     });
 
@@ -105,7 +105,7 @@ describe("StakingLogicYGov", function() {
 
         expect(calls.targets.length).to.eq(1);
         expect(calls.data.length).to.eq(1);
-        
+
         await signers[0].sendTransaction({
             to: calls.targets[0],
             data: calls.data[0]
@@ -117,5 +117,17 @@ describe("StakingLogicYGov", function() {
         expect(tokenBalance).to.eq(mintAmount);
         expect(yGovBalance).to.eq(0);
     });
+
+    it("exchangeRate()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRate(yGov.address);
+        // 1 wrapped = 0.2
+        expect(exchangeRate).to.eq(ethers.BigNumber.from("10").pow(16).mul(20))
+    })
+
+    it("exchangeRateView()", async() => {
+        const exchangeRate = await lendingLogic.exchangeRateView(yGov.address);
+        // 1 wrapped == 0.2
+        expect(exchangeRate).to.eq( ethers.BigNumber.from("10").pow(16).mul(20))
+    })
 
 });

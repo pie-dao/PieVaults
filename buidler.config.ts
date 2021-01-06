@@ -7,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
+import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingRegistry, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
 import CallFacetArtifact from "./artifacts/CallFacet.json";
@@ -280,10 +280,27 @@ task("deploy-lending-logic-compound")
   .addParam("protocolKey", "Bytes32 protocol key")
   .setAction(async(taskArgs, {ethers}) => {
     const signers = await ethers.getSigners();
-    
+
     const lendingLogicCompound = await (new LendingLogicCompoundFactory(signers[0])).deploy(taskArgs.lendingRegistry, taskArgs.protocolKey);
 
     console.log(`Deployed lendingLogicCompound at: ${lendingLogicCompound.address}`);
+});
+
+task("set-lending-registry")
+  .addParam("lendingRegistry", "address of the lending registry")
+  .addParam("lendingLogic", "address of the lending logic")
+  .addParam("protocolKey", "Bytes32 protocol key")
+  .addParam("wrapped", "wrapped token address")
+  .addParam("underlying", "underlying token address")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+
+    const lendingRegistry = await ethers.getContractAt("LendingRegistry", taskArgs.lendingRegistry) as LendingRegistry
+    await lendingRegistry.setWrappedToProtocol(taskArgs.wrapped, taskArgs.protocolKey)
+    await lendingRegistry.setWrappedToUnderlying(taskArgs.wrapped, taskArgs.underlying)
+    await lendingRegistry.setProtocolToLogic(taskArgs.protocolKey, taskArgs.lendingLogic)
+    await lendingRegistry.setUnderlyingToProtocolWrapped(taskArgs.underlying, taskArgs.protocolKey, taskArgs.wrapped)
+    console.log(`Set lending registry entries`);
 });
 
 task("deploy-stake-sushi")

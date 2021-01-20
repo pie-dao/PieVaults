@@ -688,9 +688,10 @@
   resolved "https://registry.yarnpkg.com/@openzeppelin/contracts/-/contracts-3.2.1-solc-0.7.tgz#067a60918b935d4733208edb3d7e35cd1d51026b"
   integrity sha512-VfKZE9L2HNaZVBR7l5yHbRmap3EiVw9F5iVXRRDdgfnA9vQ1yFanrs0VYmdo2VIXC+EsI9wPPYZY9Ic7/qDBdw==
 
-"@pie-dao/proxy@https://github.com/pie-dao/pie-proxy.git#feat/sol-0.7.1":
-  version "0.0.6"
-  resolved "https://github.com/pie-dao/pie-proxy.git#ff8ea1256c8f0e9d91651beb58dbd6b6f77cdff5"
+"@pie-dao/proxy@^1.0.0":
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/@pie-dao/proxy/-/proxy-1.0.0.tgz#0866289898dc6180161b5058f6ef8000f7b5e66f"
+  integrity sha512-4DGyK6o33YAY8led9FllFIu9HwmrUsq40wdLMjpNW9Ik+jDhoguKLaQ5oeDaGs8DyT+Z0LVSQJVkBNYGLWRJ6w==
   dependencies:
     "@nomiclabs/buidler" "1.3.0"
     dotenv "^8.2.0"

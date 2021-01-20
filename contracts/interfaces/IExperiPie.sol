@@ -3,7 +3,7 @@ pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "diamond-2/contracts/interfaces/IERC173.sol";
+import "@pie-dao/diamond/contracts/interfaces/IERC173.sol";
 import "./IBasketFacet.sol";
 import "./IERC20Facet.sol";
 import "./ICallFacet.sol";

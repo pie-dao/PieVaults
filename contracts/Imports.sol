@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.0;
 
-import "diamond-2/contracts/facets/DiamondCutFacet.sol";
-import "diamond-2/contracts/facets/DiamondLoupeFacet.sol";
-import "diamond-2/contracts/facets/OwnershipFacet.sol";
+import "@pie-dao/diamond/contracts/facets/DiamondCutFacet.sol";
+import "@pie-dao/diamond/contracts/facets/DiamondLoupeFacet.sol";
+import "@pie-dao/diamond/contracts/facets/OwnershipFacet.sol";
 
 
 // Get the compiler and typechain to pick up these facets

@@ -2,7 +2,7 @@
 pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
-import "diamond-2/contracts/Diamond.sol";
+import "@pie-dao/diamond/contracts/Diamond.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@pie-dao/proxy/contracts/PProxy.sol";

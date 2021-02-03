@@ -107,7 +107,7 @@ describe("TokenListUpdater", function() {
 
     it("Calling from non owner should fail", async() => {
         await tokenListUpdater.renounceOwnership();
-        await expect(tokenListUpdater.update(experiPie.address, testTokenAddresses)).to.be.revertedWith("Ownable: caller is not the owner");
+        await expect(tokenListUpdater.update(experiPie.address, testTokenAddresses)).to.be.revertedWith("Not allowed");
     });
 
 
@@ -154,6 +154,16 @@ describe("TokenListUpdater", function() {
 
     it("Updating a token which is in the list with sufficient balance should do nothing", async() => {
         await tokenListUpdater.update(experiPie.address, [testTokenAddresses[0]]);
+
+        const tokens = await experiPie.getTokens();
+        const tokenCount = tokens.length;
+
+        expect(tokenCount).to.eq(testTokens.length);
+        expect(tokens).to.eql(testTokenAddresses);
+    });
+
+    it("Updating from the pie itself should work", async() => {
+        await tokenListUpdater.populateTransaction.update(experiPie.address, [testTokenAddresses[0]]);
 
         const tokens = await experiPie.getTokens();
         const tokenCount = tokens.length;

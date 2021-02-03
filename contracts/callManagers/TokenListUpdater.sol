@@ -8,9 +8,15 @@ import "../interfaces/IExperiPie.sol";
 
 contract TokenListUpdater is Ownable, ReentrancyGuard {
 
+    modifier ownerOrPie(address _pie) {
+        require(msg.sender == owner() ||
+        msg.sender == _pie, "Not allowed");
+        _;
+    }
+
     uint256 public constant MIN_AMOUNT = 10**6;
 
-    function update(address _pie, address[] calldata _tokens) onlyOwner nonReentrant external {
+    function update(address _pie, address[] calldata _tokens) ownerOrPie(_pie) nonReentrant external {
         IExperiPie pie = IExperiPie(_pie);
 
         for(uint256 i = 0; i < _tokens.length; i ++) {

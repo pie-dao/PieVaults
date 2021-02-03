@@ -163,7 +163,9 @@ describe("TokenListUpdater", function() {
     });
 
     it("Updating from the pie itself should work", async() => {
-        await tokenListUpdater.populateTransaction.update(experiPie.address, [testTokenAddresses[0]]);
+        const tx = await tokenListUpdater.populateTransaction.update(experiPie.address, [testTokenAddresses[0]]);
+
+        await experiPie.singleCall(tx.to, tx.data, 0);
 
         const tokens = await experiPie.getTokens();
         const tokenCount = tokens.length;

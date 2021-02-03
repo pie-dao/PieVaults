@@ -7,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingRegistry, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
+import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingRegistry, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory, TokenListUpdater, TokenListUpdaterFactory } from "./typechain";
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
 import CallFacetArtifact from "./artifacts/CallFacet.json";
@@ -51,7 +51,7 @@ const config = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [process.env.PRIVATE_KEY],
-      gasPrice: 70000000000
+      gasPrice: 200000000000
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
@@ -333,6 +333,15 @@ task("deploy-lending-logic-aave")
     const lendingLogicAave = await (new LendingLogicAaveFactory(signers[0])).deploy(taskArgs.lendingPool, 21);
 
     console.log(`Deployed lendingLogicAave at: ${lendingLogicAave.address}`);
+});
+
+task("deploy-token-list-updater")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+
+    const tokenListUpdater = await (new TokenListUpdaterFactory(signers[0]).deploy());
+
+    console.log(`Deployed tokenListUpdater: ${tokenListUpdater.address}`);
 });
 
 export default config;

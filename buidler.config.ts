@@ -7,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingRegistry, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
+import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingRegistry, MockTokenFactory, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
 import CallFacetArtifact from "./artifacts/CallFacet.json";
@@ -23,10 +23,11 @@ import { LendingRegistryFactory } from "./typechain/LendingRegistryFactory";
 import { LendingLogicAaveFactory } from "./typechain/LendingLogicAaveFactory";
 import { LendingManagerFactory } from "./typechain/LendingManagerFactory";
 import { StakingLogicYGovFactory } from "./typechain/StakingLogicYGovFactory";
+import { parseEther } from "ethers/lib/utils";
 
 usePlugin("@nomiclabs/buidler-ethers");
 usePlugin('solidity-coverage');
-usePlugin("@nomiclabs/buidler-etherscan");
+usePlugin("bsc-buidler-etherscan");
 usePlugin('solidity-coverage');
 
 function getSelectors(contract: Contract) {
@@ -52,6 +53,14 @@ const config = {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [process.env.PRIVATE_KEY],
       gasPrice: 70000000000
+    },
+    okex: {
+      url: `http://okexchaintest.okexcn.com:26659/`,
+      accounts: [process.env.PRIVATE_KEY],
+    },
+    bsc: {
+      url: `https://bsc-dataseed.binance.org/`,
+      accounts: [process.env.PRIVATE_KEY],
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
@@ -334,5 +343,19 @@ task("deploy-lending-logic-aave")
 
     console.log(`Deployed lendingLogicAave at: ${lendingLogicAave.address}`);
 });
+
+
+task("deploy-mock-token")
+  .addParam("name")
+  .addParam("symbol")
+  .setAction(async (taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    const mockToken = await (new MockTokenFactory(signers[0])).deploy(taskArgs.name, taskArgs.symbol);
+
+    await mockToken.mint(parseEther("1000000000"), await signers[0].getAddress());
+
+    console.log(`Deployed mock token at: ${mockToken.address}`);
+})
+
 
 export default config;

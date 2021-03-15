@@ -1,6 +1,6 @@
 {
-    "name": "PieDAO DeFi Yield",
-    "symbol": "DXY",
+    "name": "PieDAO Test Pie",
+    "symbol": "TEST++",
     "initialSupply": "1000000000000000000",
     "tokens": [
         {   

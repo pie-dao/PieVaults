@@ -1,0 +1,32 @@
+{
+    "name": "Ethereum Killer Pie",
+    "symbol": "KILL",
+    "initialSupply": "1000000000000000000",
+    "tokens": [
+        {   
+            "name": "ADA",
+            "address": "0x3ee2200efb3400fabb9aacf31297cbdd1d435d47",
+            "amount": "11930465590074099156"
+        },
+        {   
+            "name": "EOS",
+            "address": "0x56b6fb708fc5732dec1afc8d8556423a2edccbd6",
+            "amount": "3477862423320306728"
+        },
+        {   
+            "name": "DOT",
+            "address": "0x7083609fce4d1d8dc0c979aab8c869ea2c873402",
+            "amount": "364513957139993592"
+        },
+        {   
+            "name": "XTZ",
+            "address": "0x16939ef78684453bfdfb47825f8a5f714f12623a",
+            "amount": "3270268710965374522"
+        },
+        {   
+            "name": "BNB",
+            "address": "0xbb4CdB9CBd36B01bD1cBaEBF2De08d9173bc095c",
+            "amount": "50000000000000000"
+        }
+    ]
+}

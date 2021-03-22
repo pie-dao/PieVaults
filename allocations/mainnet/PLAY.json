@@ -1,77 +1,77 @@
 {
     "name": "Metaverse NFT Index",
     "symbol": "PLAY",
-    "initialSupply": "1000000000000000000",
+    "initialSupply": "600000000000000000000",
     "tokens": [
         {   
             "name": "MANA",
             "address": "0x0f5d2fb29fb7d3cfee444a200298f468908cc942",
-            "amount": "194405975911704000"
+            "amount": "123788888616722000000"
         },
         {   
             "name": "ENJ",
             "address": "0xf629cbd94d3791c9250152bd8dfbdf380e2a3b9c",
-            "amount": "82355555555555600"
+            "amount": "52197183098591500000"
         },
         {   
             "name": "SOCKS",
             "address": "0x23b608675a2b2fb1890d3abbd85c5775c51691d5",
-            "amount": "181954056601"
+            "amount": "113085621970921"
         },
         {   
             "name": "RFOX",
             "address": "0xa1d6df714f91debf4e0802a542e13067f31b8262",
-            "amount": "313302925198062000"
+            "amount": "195402505436834000000"
         },
         {   
             "name": "SAND",
             "address": "0x3845badAde8e6dFF049820680d1F14bD3903a5d0",
-            "amount": "207290970351314000"
+            "amount": "134205450183877000000"
         },
         {   
             "name": "AXS",
             "address": "0xF5D669627376EBd411E34b98F19C868c8ABA5ADA",
-            "amount": "17969432314410500"
+            "amount": "12014598540146000000"
         },
         {   
             "name": "PUNK-BASIC",
             "address": "0x69bbe2fa02b4d90a944ff328663667dc32786385",
-            "amount": "261938273373"
+            "amount": "166256157635468"
         },
         {   
             "name": "MUST",
             "address": "0x9c78ee466d6cb57a4d01fd887d2b5dfb2d46288f",
-            "amount": "42792384406165"
+            "amount": "26413968064468000"
         },
         {   
             "name": "NFTX",
             "address": "0x87d73E916D7057945c9BcD8cdd94e42A6F47f776",
-            "amount": "297480710235196"
+            "amount": "193421649121040000"
         },
         {   
             "name": "ATRI",
             "address": "0xdacD69347dE42baBfAEcD09dC88958378780FB62",
-            "amount": "107202463418092000"
+            "amount": "82000000000000000000"
         },
         {   
             "name": "UOS",
             "address": "0xd13c7342e1ef687c5ad21b27c2b65d772cab5c8c",
-            "amount": "157919795599930000"
+            "amount": "1024555"
         },
         {   
             "name": "MASK",
             "address": "0x0fe629d1e84e171f8ff0c1ded2cc2221caa48a3f",
-            "amount": "4185968633142"
+            "amount": "2500335693218070"
         },
         {   
             "name": "RARI",
             "address": "0xfca59cd816ab1ead66534d82bc21e7515ce441cf",
-            "amount": "1717171717171720"
+            "amount": "1016871165644170000"
         },
         {   
             "name": "GHST",
             "address": "0x3F382DbD960E3a9bbCeaE22651E88158d2791550",
-            "amount": "24178082191780800"
+            "amount": "14811188811188800000"
         }
     ]
 }

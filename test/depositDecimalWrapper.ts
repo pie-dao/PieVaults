@@ -141,13 +141,19 @@ describe.only("DepositDecimalWrapper", function() {
         expect(exchangeRate).to.eq(parseEther("1").div(CONVERSION));
     });
 
-    it.only("Deposit based on exchangeRate", async() => {
+    it("Deposit based on exchangeRate", async() => {
+        await token.approve(decimalWrapper.address, constants.MaxUint256);
         const exchangeRate = await lendingLogic.exchangeRateView(decimalWrapper.address);
         const targetAmount = parseEther("1");
         const depositAmount = targetAmount.mul(exchangeRate.toString()).div(parseEther("1"));
 
         console.log(targetAmount.toString());
         console.log(depositAmount.toString());
+
+        await decimalWrapper.deposit(depositAmount);
+        const decimalWrapperBalance = await decimalWrapper.balanceOf(account);
+
+        expect(decimalWrapperBalance).to.eq(targetAmount);
     });
 
 });

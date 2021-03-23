@@ -7,7 +7,7 @@ import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
 import {DiamondFactoryContract} from "./typechain/DiamondFactoryContract";
-import { BasketFacet, CallFacet, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingRegistry, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
+import { BasketFacet, CallFacet, DepositLogicDecimalWrapper, DepositLogicDecimalWrapperFactory, Diamond, DiamondCutFacet, DiamondFactoryContractFactory, DiamondLoupeFacet, Erc20Facet, LendingRegistry, OwnershipFacet, PieFactoryContract, PieFactoryContractFactory, StakingLogicSushiFactory } from "./typechain";
 import BasketFacetArtifact from "./artifacts/BasketFacet.json";
 import Erc20FacetArtifact from "./artifacts/ERC20Facet.json";
 import CallFacetArtifact from "./artifacts/CallFacet.json";
@@ -333,6 +333,15 @@ task("deploy-lending-logic-aave")
     const lendingLogicAave = await (new LendingLogicAaveFactory(signers[0])).deploy(taskArgs.lendingPool, 21);
 
     console.log(`Deployed lendingLogicAave at: ${lendingLogicAave.address}`);
+});
+
+task("deploy-deposit-logic-decimal-wrapper")
+  .addParam("lendingRegistry")
+  .addParam("protocolKey", "bytes32", "0x044e1ec7791dd6f1b42d4fb0c655dd05f1d1518c5ce779d9f5e24b34741ab56d")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+    const depositLogicDecimalWrapper = await (new DepositLogicDecimalWrapperFactory(signers[0]).deploy(taskArgs.lendingRegistry, taskArgs.protocolKey));
+    console.log(`Deployed depositLogicDecimalWrapper at: ${depositLogicDecimalWrapper.address}`);
 });
 
 export default config;

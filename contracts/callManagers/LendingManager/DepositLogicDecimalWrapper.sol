@@ -9,7 +9,7 @@ import "../../interfaces/IDecimalWrapper.sol";
 import "./LendingRegistry.sol";
 
 contract DepositLogicDecimalWrapper is ILendingLogic {
-    LendingRegistry public lendingRegistry;
+    LendingRegistry public immutable lendingRegistry;
     bytes32 public immutable protocolKey;
 
     constructor(address _lendingRegistry, bytes32 _protocolKey) {

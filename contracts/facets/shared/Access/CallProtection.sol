@@ -8,6 +8,7 @@ contract CallProtection {
         require(
             msg.sender == LibDiamond.diamondStorage().contractOwner ||
             msg.sender == address(this), "NOT_ALLOWED"
+            // TODO consider allowing whitelisted callers from the callFacet
         );
         _;
     }

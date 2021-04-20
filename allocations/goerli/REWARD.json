@@ -1,0 +1,22 @@
+{
+    "name": "PieDAO Reward",
+    "symbol": "RWRD",
+    "initialSupply": "1000000000000000000",
+    "tokens": [
+        {   
+            "name": "SUSHI",
+            "address": "0x7A55eE2F3563e4E0e5958fe65e96e2B9132F7E5D",
+            "amount": "6666666666666666666"
+        },
+        {   
+            "name": "BAL",
+            "address": "0x22D644ae1673FD769E9525f10c98C9C28f4f884a",
+            "amount": "6969696969696969696"
+        },
+        {   
+            "name": "CRV",
+            "address": "0x889b1D706c86183e8F1D94Fc9B213421bd662d2A",
+            "amount": "2802127799270877"
+        }
+    ]
+}

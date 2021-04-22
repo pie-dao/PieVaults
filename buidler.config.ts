@@ -51,7 +51,7 @@ const config = {
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,
       accounts: [process.env.PRIVATE_KEY],
-      gasPrice: 70000000000
+      gasPrice: 170000000000
     },
     kovan: {
       url: `https://kovan.infura.io/v3/${process.env.INFURA_PROJECT_ID}`,

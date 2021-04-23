@@ -163,6 +163,11 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
             // redeem less tokens if there is an exit fee
             uint256 tokenAmount = tokenBalance.mul(_amount.sub(feeAmount)).div(totalSupply);
             require(tokenBalance.sub(tokenAmount) >= MIN_AMOUNT, "TOKEN_BALANCE_TOO_LOW");
+            
+            // TODO limit loss to default
+            // get actual token amount received
+            uint256 lossSuffered;
+            (tokenAmount,lossSuffered) = _beforeExitPoolUnderlyingTransfer(msg.sender, token, tokenAmount);
             token.safeTransfer(msg.sender, tokenAmount);
         }
 
@@ -181,6 +186,13 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
         require(totalSupply.sub(_amount) >= MIN_AMOUNT, "POOL_TOKEN_BALANCE_TOO_LOW");
         LibERC20.burn(msg.sender, _amount);
         emit PoolExited(msg.sender, _amount);
+    }
+
+    // TODO add exitPool function with customisable loss per asset
+
+    function _beforeExitPoolUnderlyingTransfer(address _to, IERC20 _token, uint256 _amount) internal virtual returns(uint256 _amountWithdrawn, uint256 _lossSuffered) {
+        //NOTHING
+        return(_amount, _lossSuffered);
     }
 
 

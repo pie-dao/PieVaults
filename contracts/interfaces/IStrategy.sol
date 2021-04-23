@@ -28,5 +28,7 @@ interface IStrategy {
 
     function harvest() external;
 
+    function withdraw(uint256 amount) external returns(uint256);
+
     event Harvested(uint256 profit, uint256 loss, uint256 debtPayment, uint256 debtOutstanding);
 }

@@ -6,8 +6,11 @@ import "../Basket/LibBasketStorage.sol";
 import "./LibStrategyBasketStorage.sol";
 import "../../interfaces/IStrategy.sol";
 
+import "@openzeppelin/contracts/math/Math.sol";
 
+// TODO change name to match BasketFacet
 contract StrategyBasket is BasketFacet {
+    using Math for uint256;
 
     uint256 constant MAXIMUM_STRATEGIES = 20;
     uint256 constant MAX_BPS = 10000; //TODO
@@ -216,6 +219,76 @@ contract StrategyBasket is BasketFacet {
     //TODO
     // @view @external def debtOutstanding(strategy: address = msg.sender) -> uint256:
 
+    // Hooks
+    function _beforeExitPoolUnderlyingTransfer(address _to, IERC20 _token, uint256 _amount) internal virtual override returns(uint256 _amountWithdrawn, uint256 _lossSuffered) {
+        // TODO check max loss checking necessary
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        LibStrategyBasketStorage.TokenVault storage vault = sbs.vaults[address(_token)];
+        address[] storage withdrawalQueue = vault.withdrawalQueue;
+        
+        uint256 totalLoss = 0;
+        // If the vaults balance does not cover the withdrawal
+        // TODO consider taking out this if to limt calls. The check is also executed inside of the loop
+        if(_amount > _token.balanceOf(address(this))) {
+            for(uint256 i = 0; i <  withdrawalQueue.length; i ++) {
+                uint256 vaultBalance = _token.balanceOf(address(this));
+                // we are done unwinding positions in strategies
+                if(vaultBalance >= _amount) {
+                    break;
+                }
+
+                IStrategy strategy = IStrategy(vault.withdrawalQueue[i]);
+                LibStrategyBasketStorage.StrategyParams storage strategyParams = sbs.strategies[address(strategy)];
+
+                // amountNeeded: uint256 = value - vault_balance
+                uint256 amountNeeded = _amount - vaultBalance;
+                amountNeeded = amountNeeded.min(strategyParams.totalDebt);
+
+                //Nothing to withdraw from this strategy, try the next one
+                if(amountNeeded == 0) {
+                    continue;
+                }
+
+                // # Force withdraw amount from each Strategy in the order set by governance
+                // loss: uint256 = Strategy(strategy).withdraw(amountNeeded)
+                // withdrawn: uint256 = self.token.balanceOf(self) - vault_balance
+                uint256 loss = strategy.withdraw(amountNeeded);
+                uint256 withdrawn = _token.balanceOf(address(this)) - vaultBalance;
+
+                if (loss > 0) {
+                    // NOTE: Withdrawer incurs any losses from liquidation
+                    _amount -= loss;
+                    totalLoss += loss;
+                    // TODO report loss
+                }
+
+                // self.strategies[strategy].totalDebt -= withdrawn
+                // self.totalDebt -= withdrawn
+                strategyParams.totalDebt -= withdrawn;
+                vault.totalDebt -= withdrawn;
+            }
+        }
+
+        // # NOTE: We have withdrawn everything possible out of the withdrawal queue
+        // #       but we still don't have enough to fully pay them back, so adjust
+        // #       to the total amount we've freed up through forced withdrawals
+        // vault_balance: uint256 = self.token.balanceOf(self)
+        uint256 vaultBalance = _token.balanceOf(address(this));
+
+        // if value > vault_balance:
+        //     value = vault_balance
+        //     # NOTE: Burn # of shares that corresponds to what Vault has on-hand,
+        //     #       including the losses that were incurred above during withdrawals
+        //     shares = self._sharesForAmount(value + totalLoss)
+        // TODO consider calculate exit amount by underlying asset available liquidity
+
+        // NOTE: for now we revert when not enough tokens can be liquidated
+        if(_amount > vaultBalance) {
+            revert("NOT_ENOUGH_LIQUIDITY");
+        }
+
+        return(_amount, totalLoss);
+    }
 
     // Return the total amount borrowed + debt to strategies
     // TODO check if this also overwrite the balance result in the ancestor contract inherited from

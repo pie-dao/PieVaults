@@ -11,6 +11,7 @@ import "../Basket/LibBasketStorage.sol";
 import "../ERC20/LibERC20Storage.sol";
 import "./LibBufferStorage.sol";
 import "../ERC20/LibERC20.sol";
+import "@nomiclabs/buidler/console.sol";
 
 interface IERC20MetaData {
     /**
@@ -27,6 +28,8 @@ interface IERC20MetaData {
     function decimals() external view returns (uint8);
 }
 
+
+// TODO enforce min amount staying in Vault
 contract BufferFacet is CallProtection, ReentryProtection {
     using SafeERC20 for IERC20;
 
@@ -39,18 +42,50 @@ contract BufferFacet is CallProtection, ReentryProtection {
 
         uint256 mintAmount = getVaultAmountFromInAmount(_token, _tokenInAmount);
         require(mintAmount >= _minMintAmount);
-        IERC20(_token).transferFrom(msg.sender, address(this), _tokenInAmount);
+        IERC20(_token).safeTransferFrom(msg.sender, address(this), _tokenInAmount);
 
         LibERC20.mint(msg.sender, mintAmount);
     }
 
-    function exitSingleAsset(address _token, address _exitAmount) external {
+    function exitSingleAsset(address _token, uint256 _exitAmount, uint256 _minOutAmount) external {
+        LibBufferStorage.BufferStorage storage bfs = LibBufferStorage.bufferStorage();
 
+        uint256 tokenOutAmount = getOutAmountFromMintAmount(_token, _exitAmount);
+        console.log("tokenOutAmount", tokenOutAmount);
+        console.log("buffer", bfs.bufferAmount[_token]);
+        require(tokenOutAmount <= bfs.bufferAmount[_token], "Buffer too small");
+        bfs.bufferAmount[_token] -= tokenOutAmount;
+        require(tokenOutAmount >= _minOutAmount, "Out amount too small");
+
+        IERC20(_token).safeTransfer(msg.sender, tokenOutAmount);
+        LibERC20.burn(msg.sender, _exitAmount);
     }
 
 
-    function getOutAmountFromMintAmount(address _inputToken, address _mintAmount) public {
+    function getOutAmountFromMintAmount(address _inputToken, uint256 _vaultAmount) public returns(uint256) {
+        LibBufferStorage.BufferStorage storage bfs = LibBufferStorage.bufferStorage();
+        LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
+        LibERC20Storage.ERC20Storage storage es = LibERC20Storage.erc20Storage();
 
+        ISynthetixExchangeRates rates = ISynthetixExchangeRates(bfs.exchangeRates);
+
+        uint256 rawAmount = 0;
+
+        for(uint256 i = 0; i < bs.tokens.length; i ++) {
+            IERC20 token = bs.tokens[i];
+            // TODO account for tokens in strategies
+            uint256 tokenBalance =  token.balanceOf(address(this));
+            // TODO better currencyKey fetching, or fetch from mapping somewhere
+            rawAmount += rates.rateForCurrency(stringToBytes32(
+                IERC20MetaData(address(token)).symbol()
+            )) * tokenBalance / 1e18;
+        }
+
+        // TODO check rates decimals
+        uint256 rawAmountInInputToken = rawAmount * 1e18 / rates.rateForCurrency(stringToBytes32(IERC20MetaData(_inputToken).symbol()));
+        uint256 totalSupply = es.totalSupply;
+
+        return (rawAmountInInputToken * 1e18 / totalSupply) * _vaultAmount / totalSupply;
     }
 
 

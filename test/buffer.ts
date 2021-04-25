@@ -182,10 +182,20 @@ describe("BufferFacet", function() {
     });
 
     describe.only("Very coolio", async() => {
-        it("everyting coolio", async() => {
-
+        it("Enter", async() => {
             const vaultBalanceBefore = await pie.balanceOf(account);
             await pie.enterSingleAsset(tokens[0].address, parseEther("1"), 0);
+            const vaultBalanceAfter = await pie.balanceOf(account);
+
+            console.log("token balance before", formatEther(vaultBalanceBefore));
+            console.log("token balance after", formatEther(vaultBalanceAfter));
+        })
+
+        it("Exit", async() => {
+            const vaultBalanceBefore = await pie.balanceOf(account);
+            // await pie.setBufferAmounts(tokens[0].address, parseEther("1"), parseEther("1000"));
+            await pie.enterSingleAsset(tokens[0].address, parseEther("1"), 0);
+            await pie.exitSingleAsset(tokens[0].address, parseEther("0.5"), 0);
             const vaultBalanceAfter = await pie.balanceOf(account);
 
             console.log("token balance before", formatEther(vaultBalanceBefore));

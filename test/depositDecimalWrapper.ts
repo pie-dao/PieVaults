@@ -22,7 +22,7 @@ const CONVERSION = parseEther("1");
 // random key
 const WRAPPER = "0x561ca898cce9f021c15a441ef41899706e923541cee724530075d1a114476aaa";
 
-describe.only("DepositDecimalWrapper", function() {
+describe("DepositDecimalWrapper", function() {
     this.timeout(300000000);
 
     let signers: Signer[];

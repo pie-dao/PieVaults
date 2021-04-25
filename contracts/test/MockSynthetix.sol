@@ -46,6 +46,10 @@ contract MockSynthetix is ISynthetix {
         tokenPrice[_currencyKey] = _price;
     }
 
+    function rateForCurrency(bytes32 _currencyKey) external view returns (uint256) {
+        return tokenPrice[_currencyKey];
+    }
+
     function getToken(bytes32 _currencyKey) external view returns(address) {
         return address(keyToToken[_currencyKey]);
     }

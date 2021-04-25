@@ -9,10 +9,11 @@ import "@pie-dao/diamond/contracts/interfaces/IDiamondCut.sol";
 import "./IBasketFacet.sol";
 import "./IERC20Facet.sol";
 import "./ICallFacet.sol";
+import "./IBufferFacet.sol";
 
 /**
     @title ExperiPie Interface
     @dev Combines all ExperiPie facet interfaces into one
 */
-interface IExperiPie is IERC20, IBasketFacet, IERC20Facet, IERC173, ICallFacet, IDiamondLoupe, IDiamondCut {
+interface IExperiPie is IERC20, IBasketFacet, IERC20Facet, IERC173, ICallFacet, IBufferFacet, IDiamondLoupe, IDiamondCut {
 }

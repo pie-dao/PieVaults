@@ -5,11 +5,12 @@ import "../Basket/BasketFacet.sol";
 import "../Basket/LibBasketStorage.sol";
 import "./LibStrategyBasketStorage.sol";
 import "../../interfaces/IStrategy.sol";
+import "../../interfaces/IStrategyBasketFacet.sol";
 
 import "@openzeppelin/contracts/math/Math.sol";
 
 // TODO change name to match BasketFacet
-contract StrategyBasket is BasketFacet {
+contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     using Math for uint256;
 
     uint256 constant MAXIMUM_STRATEGIES = 20;
@@ -43,7 +44,7 @@ contract StrategyBasket is BasketFacet {
             uint256 _minDebtPerHarvest, 
             uint256 _maxDebtPerHarvest,
             uint256 _performanceFee
-    ) protectedCall external {
+    ) protectedCall external override {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         
@@ -98,7 +99,7 @@ contract StrategyBasket is BasketFacet {
     function updateStrategyDebtRatio(
         address _strategy,
         uint256 _debtRatio
-    ) protectedCall external {
+    ) protectedCall external override {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         require(sbs.strategies[_strategy].activation > 0, "STRATEGY_NOT_ADDED");
 
@@ -124,7 +125,7 @@ contract StrategyBasket is BasketFacet {
     function updateStrategyMinDebtPerHarvest(
         address _strategy,
         uint256 _minDebtPerHarvest
-    ) protectedCall external {
+    ) protectedCall external override {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         require(sbs.strategies[_strategy].activation > 0, "STRATEGY_NOT_ADDED");
         require(sbs.strategies[_strategy].maxDebtPerHarvest > _minDebtPerHarvest, "MAXDEBT_HARVEST > MINDEBT_HARVEST");
@@ -145,7 +146,7 @@ contract StrategyBasket is BasketFacet {
     function updateStrategyMaxDebtPerHarvest(
         address _strategy,
         uint256 _maxDebtPerHarvest
-    ) protectedCall external {
+    ) protectedCall external override {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         require(sbs.strategies[_strategy].activation > 0, "STRATEGY_NOT_ADDED");
         require(sbs.strategies[_strategy].minDebtPerHarvest <= _maxDebtPerHarvest, "MINDEBT_HARVEST <= _maxDebtPerHarvest");
@@ -165,7 +166,7 @@ contract StrategyBasket is BasketFacet {
     function updateStrategyPerformanceFee(
         address _strategy,
         uint256 _performanceFee
-    ) protectedCall external {
+    ) protectedCall external override {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         require(sbs.strategies[_strategy].activation > 0, "STRATEGY_NOT_ADDED");
         require(sbs.strategies[_strategy].performanceFee <= MAX_BPS, "TOO GREEDY");
@@ -203,7 +204,7 @@ contract StrategyBasket is BasketFacet {
     */
     function revokeStrategy(
         address _strategy
-    ) protectedCall external {
+    ) protectedCall external override {
         _revokeStrategy(_strategy);
     }
 
@@ -296,5 +297,20 @@ contract StrategyBasket is BasketFacet {
         return LibStrategyBasketStorage.strategyBasketStorage().vaults[_token].totalDebt + super.balance(_token);
     }
 
+
+    function token() external view returns(address) {
+        address tokenAddress = LibStrategyBasketStorage.strategyBasketStorage().strategies[msg.sender].token;
+
+        if(tokenAddress == address(0)) {
+            tokenAddress = LibStrategyBasketStorage.strategyBasketStorage().nextStrategyToken;
+        }
+
+        require(tokenAddress != address(0), "STRATEGY_NOT_ADDED");
+        return tokenAddress;
+    }
+
+    function setNextStrategyToken(address _token) protectedCall external override {
+        LibStrategyBasketStorage.strategyBasketStorage().nextStrategyToken = _token;
+    }
 
 }

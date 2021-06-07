@@ -34,6 +34,7 @@ library LibStrategyBasketStorage {
     mapping(address => StrategyParams) strategies; // strategy address -> StrategyParams
     mapping(address => TokenVault) vaults; // token specific vaults
     uint256 strategiesCount;
+    address nextStrategyToken;
   }
 
   function strategyBasketStorage() internal pure returns (StrategyBasketStorage storage sbs) {

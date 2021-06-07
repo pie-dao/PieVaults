@@ -34,4 +34,8 @@ interface IStrategyBasketFacet {
     function revokeStrategy(
         address _strategy
     ) external;
+
+    function setNextStrategyToken(
+        address _token
+    ) external;
 }

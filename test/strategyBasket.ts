@@ -85,16 +85,14 @@ describe.only("StrategyBasketFacet", function() {
         const experiPieAddress = await diamondFactory.diamonds(0);
         experiPie = IExperiPieFactory.connect(experiPieAddress, signers[0]);
 
-        strategy = await (deployContract(signers[0], TestStrategyArtifact, [])) as TestStrategy;
-        await strategy.initialize(experiPie.address, await strategist.getAddress(), await rewards.getAddress(), await keeper.getAddress());
-
         for(let i = 0; i < 3; i ++) {
           const token = await (deployContract(signers[0], MockTokenArtifact, ["Mock", "Mock"])) as MockToken;
           await token.mint(parseEther("1000000"), account);
           testTokens.push(token);
         }
 
-        experiPie.add
+        await experiPie.setNextStrategyToken(testTokens[0].address);
+        strategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
 
         await timeTraveler.snapshot();
     });
@@ -262,7 +260,7 @@ describe.only("StrategyBasketFacet", function() {
           expect(beneficiaryAfter.t2).to.eq(beneficiaryBefore.t2);
           expect(beneficiaryAfter.pie).to.eq(beneficiaryBefore.pie.add(beneficiaryShare));
         });
-        it.only("Exit pool", async () => {
+        it("Exit pool", async () => {
           const burnAmount = parseEther("5");
 
           const totalSupplyBefore = await experiPie.totalSupply();

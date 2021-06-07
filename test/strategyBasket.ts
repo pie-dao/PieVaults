@@ -101,13 +101,280 @@ describe.only("StrategyBasketFacet", function() {
         await timeTraveler.revertSnapshot();
     });
 
-    describe("things", async() => {
-        it("it", async() => {
-            console.log("kek");
+    describe("StrategyBasket specific", async() => {
+      beforeEach(async() => {
+        for (const token of testTokens) {
+          await token.transfer(experiPie.address, parseEther("10"));
+          await experiPie.addToken(token.address);
+        }
+      });
+
+      describe("addStrategy", async() => {
+        it("Adding a strategy should work", async() => {
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          );
+
+          const strategyData = await experiPie.getStrategy(newStrategy.address);
+
+          expect(strategyData.token).to.eq(token);
+          expect(strategyData.debtRatio).to.eq(debtRatio);
+          expect(strategyData.minDebtPerHarvest).to.eq(minHarvest);
+          expect(strategyData.maxDebtPerHarvest).to.eq(maxHarvest);
+          expect(strategyData.performanceFee).to.eq(performanceFee);
+          // TODO check totals in vault
         });
-    })
 
+        it("Adding more strategies than the max should fail", async() => {
+          const maxStrategies = (await experiPie.MAX_STRATEGIES()).toNumber();
 
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+
+          // one strategy already attached before
+          for(let i = 0; i < maxStrategies - 1; i++) {
+            const extraStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+            await experiPie.addStrategy(token, extraStrategy.address, 100, 1000, 1000, 1000);
+          }
+
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+          await expect(experiPie.addStrategy(token, newStrategy.address, 100, 1000, 1000, 1000)).to.be.revertedWith("TOO_MANY_STRATEGIES");
+        });
+
+        it("Adding with 0x00...00 token should fail", async() => {
+          const token = constants.AddressZero;
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await expect(
+            experiPie.addStrategy(
+              token,
+              newStrategy.address,
+              debtRatio,
+              minHarvest,
+              maxHarvest,
+              performanceFee
+            )
+          ).to.be.revertedWith("ZERO_TOKEN");
+        });
+
+        it("Adding with 0x00...000 strategy should fail", async() => {
+          const token = testTokens[1].address;
+          const newStrategy = constants.AddressZero
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await expect(
+            experiPie.addStrategy(
+              token,
+              newStrategy,
+              debtRatio,
+              minHarvest,
+              maxHarvest,
+              performanceFee
+            )
+          ).to.be.revertedWith("ZERO_STRATEGY");
+        });
+
+        it("Adding a strategy twice should fail", async() => {
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          );
+
+          await expect(experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          )).to.be.revertedWith("STRATEGY_ALREADY_ADDED");
+        });
+        
+        it("Adding a strategy attached to another vault should fail", async() => {
+          //deploy another vault
+          const diamondFactory = (await run("deploy-diamond-factory")) as DiamondFactoryContract;
+
+          const strategyBasketFacet = (await deployContract(signers[0], StrategyBasketArtifact)) as StrategyBasket;
+          const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact)) as Erc20Facet;
+
+          await diamondFactory.deployNewDiamond(
+              account,
+              [
+                  {
+                      action: FacetCutAction.Add,
+                      facetAddress: strategyBasketFacet.address,
+                      functionSelectors: getSelectors(strategyBasketFacet)
+                  },
+                  {
+                      action: FacetCutAction.Add,
+                      facetAddress: erc20Facet.address,
+                      functionSelectors: getSelectors(erc20Facet)
+                  }
+              ]
+          )
+
+          const experiPieAddress = await diamondFactory.diamonds(0);
+          const experiPie2 = IExperiPieFactory.connect(experiPieAddress, signers[0]);
+          
+          const token = testTokens[1].address;
+          await experiPie2.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie2.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await expect(experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          )).to.be.revertedWith("STRATEGY_DOESNT_WORK_IN_VAULT");
+        });
+
+        it("Adding a strategy which wants a different token should fail", async() => {
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await expect(experiPie.addStrategy(
+            testTokens[2].address,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          )).to.be.revertedWith("STRATEGY_DOESNT_WANT_THE_TOKEN");
+        });
+
+        it("Attaching a strategy to a token which is not in the vault should fail", async() => {
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          //remove token
+          await experiPie.removeToken(token);
+
+          await expect(experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          )).to.be.revertedWith("VAULT_DOESNT_HAVE_TOKEN");
+        });
+
+        it("Going over the debt ratio should fail", async() => {
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 10001;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await expect(experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          )).to.be.revertedWith("TOO_MUCH_DEBT_FOR_TOKEN");
+        });
+
+        it("Adding with a minDebt higher than maxDebt should fail", async() => {
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("2");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 2000;
+
+          await expect(experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          )).to.be.revertedWith("MINDEBT_OVER_MAXDEBT");
+        });
+
+        it("Token + strategy performance fee can not be higher than 100%", async() => {
+          const token = testTokens[1].address;
+          await experiPie.setNextStrategyToken(token);
+          const newStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
+
+          const debtRatio = 5000;
+          const minHarvest = parseEther("1");
+          const maxHarvest = parseEther("1");
+          const performanceFee = 10001;
+
+          await expect(experiPie.addStrategy(
+            token,
+            newStrategy.address,
+            debtRatio,
+            minHarvest,
+            maxHarvest,
+            performanceFee
+          )).to.be.revertedWith("TOO_GREEDY");
+        });
+      });
+    });
 
       describe("Joining and exiting", async () => {
         beforeEach(async() => {

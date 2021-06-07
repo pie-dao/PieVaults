@@ -2,6 +2,8 @@
 pragma solidity ^0.7.1;
 pragma experimental ABIEncoderV2;
 
+import "../facets/StrategyBasket/LibStrategyBasketStorage.sol";
+
 interface IStrategyBasketFacet {
     function addStrategy(
         address _token, 
@@ -38,4 +40,10 @@ interface IStrategyBasketFacet {
     function setNextStrategyToken(
         address _token
     ) external;
+
+    function getStrategy(
+        address _strategy
+    ) external view returns(LibStrategyBasketStorage.StrategyParams memory);
+
+    function MAX_STRATEGIES() external view returns(uint256);
 }

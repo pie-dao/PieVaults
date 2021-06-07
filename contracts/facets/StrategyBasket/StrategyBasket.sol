@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.7.1;
+pragma experimental ABIEncoderV2;
 
 import "../Basket/BasketFacet.sol";
 import "../Basket/LibBasketStorage.sol";
@@ -49,11 +50,11 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
         
         // Check if queue is full
-        require(sbs.strategiesCount < MAXIMUM_STRATEGIES, "TOO_MANY_STRATEGIES");
+        require(sbs.strategiesCount < MAXIMUM_STRATEGIES - 1, "TOO_MANY_STRATEGIES");
 
         // Check strategy configuration
-        require(_token != address(0), "Token cannot be Zero");
-        require(_strategy != address(0), "Strategy cannot be Zero");
+        require(_token != address(0), "ZERO_TOKEN");
+        require(_strategy != address(0), "ZERO_STRATEGY");
         require(sbs.strategies[_strategy].activation == 0, "STRATEGY_ALREADY_ADDED");
         require(IStrategy(_strategy).vault() == address(this), "STRATEGY_DOESNT_WORK_IN_VAULT");
         require(IStrategy(_strategy).want() == _token, "STRATEGY_DOESNT_WANT_THE_TOKEN");
@@ -309,8 +310,17 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         return tokenAddress;
     }
 
+    function getStrategy(address _strategy) external view override returns(LibStrategyBasketStorage.StrategyParams memory) {
+        return LibStrategyBasketStorage.strategyBasketStorage().strategies[_strategy];
+    }
+
     function setNextStrategyToken(address _token) protectedCall external override {
         LibStrategyBasketStorage.strategyBasketStorage().nextStrategyToken = _token;
+    }
+
+    // expose getter for testing
+    function MAX_STRATEGIES() external view override returns(uint256) {
+        return MAXIMUM_STRATEGIES;
     }
 
 }

@@ -37,7 +37,7 @@ function getSelectors(contract: Contract) {
     return signatures;
 }
 
-describe.only("StrategyBasketFacet", function() {
+describe("StrategyBasketFacet", function() {
     this.timeout(300000000);
 
     let experiPie: IExperiPie;

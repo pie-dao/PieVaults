@@ -358,7 +358,7 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
 
         // Profit is locked and gradually released per block
         // NOTE: compute current locked profit and replace with sum of current and new
-        uint256 lockedProfitBeforeLoss = _calculateLockedProfit() + _gain - totalFees;
+        uint256 lockedProfitBeforeLoss = _calculateLockedProfit(token) + _gain - totalFees;
         if(lockedProfitBeforeLoss > _loss) {
             sbs.vaults[token].lockedProfit = lockedProfitBeforeLoss - _loss;
         } else{
@@ -523,10 +523,22 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     }
 
     // TODO make this internal vault specific
-    function _calculateLockedProfit() internal returns(uint256) {
-        return 0;
+    function _calculateLockedProfit(address token) internal returns(uint256) {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        // TODO look at lockedprofit degradation
+        uint256 lockedFundsRatio = (block.timestamp - sbs.vaults[token].lastReport) * sbs.vaults[token].lockedProfitDegradation;
+
+        if(lockedFundsRatio < DEGREDATION_COEFFICIENT) {
+            uint256 lockedProfit = sbs.vaults[token].lockedProfit;
+            return lockedProfit - (
+                    lockedFundsRatio
+                    * lockedProfit
+                    / DEGREDATION_COEFFICIENT
+                );
+        } else {        
+            return 0;
+        }
     }
- 
     // Return the total amount borrowed + debt to strategies
     // TODO check if this also overwrite the balance result in the ancestor contract inherited from
     function balance(address _token) public view override returns(uint256) {

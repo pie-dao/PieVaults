@@ -30,6 +30,7 @@ library LibStrategyBasketStorage {
     uint256 performanceFee; // Vault fee (basis points)
     uint256 lockedProfit;  // how much profit is locked and cant be withdrawn
     bool emergencyShutdown;
+    uint256 lockedProfitDegradation;
   }
 
   struct StrategyBasketStorage {

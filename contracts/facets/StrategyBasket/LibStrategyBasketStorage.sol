@@ -28,6 +28,8 @@ library LibStrategyBasketStorage {
     uint256 lastReport; // timestamp of last report
     uint256 activation; // timestamp of when this token was added
     uint256 performanceFee; // Vault fee (basis points)
+    uint256 lockedProfit;  // how much profit is locked and cant be withdrawn
+    bool emergencyShutdown;
   }
 
   struct StrategyBasketStorage {

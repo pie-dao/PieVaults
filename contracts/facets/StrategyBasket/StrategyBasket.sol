@@ -418,6 +418,11 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     function _assessFees(address _strategy, uint256 _loss) internal returns(uint256) {
         // return mock value
         return 0;
+
+        // NOTE
+        // Since Yearn vaults use a single underlying asset it issues new shares to pay for the vault.
+        // PieVaults contain multiple asserts so minting shares for performance fees does not work
+        // Instead we should send some of the underlying asset to the PieDAO fee receiving address and strategist
     }
 
     function _creditAvailable(address _strategy) internal returns(uint256) {

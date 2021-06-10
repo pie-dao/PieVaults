@@ -425,7 +425,7 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // Instead we should send some of the underlying asset to the PieDAO fee receiving address and strategist
     }
 
-    function _creditAvailable(address _strategy) internal returns(uint256) {
+    function _creditAvailable(address _strategy) internal view returns(uint256) {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         address token = sbs.strategies[_strategy].token;
 
@@ -471,9 +471,55 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         }
     }
 
+    function creditAvailable(address _strategy) external view returns (uint256){
+        // @notice
+        //     Amount of tokens in Vault a Strategy has access to as a credit line.
+        //     This will check the Strategy's debt limit, as well as the tokens
+        //     available in the Vault, and determine the maximum amount of tokens
+        //     (if any) the Strategy may draw on.
+        //     In the rare case the Vault is in emergency shutdown this will return 0.
+        // @param strategy The Strategy to check. Defaults to caller.
+        // @return The quantity of tokens available for the Strategy to draw on.
+        return _creditAvailable(_strategy);
+    }
+
+    function creditAvailable() external view returns (uint256){
+        // @notice
+        //     Amount of tokens in Vault a Strategy has access to as a credit line.
+        //     This will check the Strategy's debt limit, as well as the tokens
+        //     available in the Vault, and determine the maximum amount of tokens
+        //     (if any) the Strategy may draw on.
+        //     In the rare case the Vault is in emergency shutdown this will return 0.
+        // @param strategy The Strategy to check. Defaults to caller.
+        // @return The quantity of tokens available for the Strategy to draw on.
+        return _creditAvailable(msg.sender);
+    }
+
     function _debtOutstanding(address _strategy) internal returns(uint256) {
-        // return mock value
-        return 0;
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        address token = sbs.strategies[_strategy].token;
+
+        // See note on `debtOutstanding()`.
+        if(sbs.vaults[token].debtRatio == 0) {
+            return sbs.strategies[_strategy].totalDebt;
+        }
+
+        uint256 strategyDebtLimit = (
+            sbs.strategies[_strategy].debtRatio
+            * balance(token)
+            / MAX_BPS
+        );
+        uint256 strategyTotalDebt = sbs.strategies[_strategy].totalDebt;
+
+        if(sbs.vaults[token].emergencyShutdown) {
+            return strategyTotalDebt;
+        }
+        else if (strategyTotalDebt <= strategyDebtLimit) {
+            return 0;
+        }
+        else {
+            return strategyTotalDebt - strategyDebtLimit;
+        }
     }
 
     // TODO make this internal vault specific

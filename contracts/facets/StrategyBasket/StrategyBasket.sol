@@ -426,8 +426,49 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     }
 
     function _creditAvailable(address _strategy) internal returns(uint256) {
-        // return mock value
-        return 0;
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        address token = sbs.strategies[_strategy].token;
+
+        // See note on `creditAvailable()`.
+        if(sbs.vaults[token].emergencyShutdown){
+            return 0;
+        }
+
+        uint256 vaultTotalAssets = balance(token);
+        uint256 vaultDebtLimit =  sbs.vaults[token].debtRatio * vaultTotalAssets / MAX_BPS;
+        uint256 vaultTotalDebt = sbs.vaults[token].totalDebt;
+        uint256 strategyDebtLimit = sbs.strategies[_strategy].debtRatio * vaultTotalAssets / MAX_BPS;
+        uint256 strategyTotalDebt = sbs.strategies[_strategy].totalDebt;
+        uint256 strategyMinDebtPerHarvest = sbs.strategies[_strategy].minDebtPerHarvest;
+        uint256 strategyMaxDebtPerHarvest = sbs.strategies[_strategy].maxDebtPerHarvest;
+
+        // Exhausted credit line
+        if(strategyDebtLimit <= strategyTotalDebt || vaultDebtLimit <= vaultTotalDebt) {
+            return 0;
+        }
+
+        // Start with debt limit left for the Strategy
+        uint256 available = strategyDebtLimit - strategyTotalDebt;
+
+        // Adjust by the global debt limit left
+        available = available.min(vaultDebtLimit - vaultTotalDebt);
+
+        // Can only borrow up to what the contract has in reserve
+        // NOTE: Running near 100% is discouraged
+        available = available.min(IERC20(token).balanceOf(address(this)));
+
+        // Adjust by min and max borrow limits (per harvest)
+        // NOTE: min increase can be used to ensure that if a strategy has a minimum
+        //       amount of capital needed to purchase a position, it's not given capital
+        //       it can't make use of yet.
+        // NOTE: max increase is used to make sure each harvest isn't bigger than what
+        //       is authorized. This combined with adjusting min and max periods in
+        //       `BaseStrategy` can be used to effect a "rate limit" on capital increase.
+        if(available < strategyMinDebtPerHarvest) {
+            return 0;
+        } else {
+            return available.min(strategyMaxDebtPerHarvest);
+        }
     }
 
     function _debtOutstanding(address _strategy) internal returns(uint256) {

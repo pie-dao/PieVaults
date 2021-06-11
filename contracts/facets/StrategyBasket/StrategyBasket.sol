@@ -7,6 +7,7 @@ import "../Basket/LibBasketStorage.sol";
 import "./LibStrategyBasketStorage.sol";
 import "../../interfaces/IStrategy.sol";
 import "../../interfaces/IStrategyBasketFacet.sol";
+import { StrategyParams as YearnStrategyParams } from "../../interfaces/VaultAPI.sol";
 
 import "@openzeppelin/contracts/math/Math.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -568,6 +569,28 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     // expose getter for testing
     function MAX_STRATEGIES() external view override returns(uint256) {
         return MAXIMUM_STRATEGIES;
+    }
+
+
+    function strategies(address _strategy) public view returns(YearnStrategyParams memory params) {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        LibStrategyBasketStorage.StrategyParams storage strategy = sbs.strategies[_strategy];
+
+        params.performanceFee = strategy.performanceFee;
+        params.activation = strategy.activation;
+        params.debtRatio = strategy.debtRatio;
+        params.minDebtPerHarvest = strategy.minDebtPerHarvest;
+        params.maxDebtPerHarvest = strategy.maxDebtPerHarvest;
+        params.lastReport = strategy.lastReport;
+        params.totalDebt = strategy.totalDebt;
+        params.totalGain = strategy.totalGain;
+        params.totalLoss = strategy.totalLoss;
+
+        return params;
+    }
+
+    function strategies() external view returns(YearnStrategyParams memory) {
+        return strategies(msg.sender);
     }
 
 }

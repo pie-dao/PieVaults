@@ -197,6 +197,16 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // TODO event
     }
 
+    function setStrategySetLimitRatio(address _strategy, uint256 _lossRatioLimit, uint256 _profitLimitRatio) protectedCall external {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        require(sbs.strategies[_strategy].activation > 0, "STRATEGY_NOT_ADDED");
+
+        sbs.strategies[_strategy].lossLimitRatio = _lossRatioLimit;
+        sbs.strategies[_strategy].profitLimitRatio = _profitLimitRatio;
+
+        // TODO event
+    }
+
     function _revokeStrategy(
         address _strategy
     ) internal {

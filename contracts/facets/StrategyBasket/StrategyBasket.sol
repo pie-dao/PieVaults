@@ -186,6 +186,7 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         address token = IStrategy(_strategy).want();
         sbs.vaults[token].debtRatio -= sbs.strategies[_strategy].debtRatio;
         sbs.strategies[_strategy].debtRatio = 0;
+        
         // TODO log StrategyRevoked(strategy)
     }
 
@@ -212,8 +213,66 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         _revokeStrategy(_strategy);
     }
 
-    // TODO
-    //function migrateStrategy() {}
+    function setEmergencyShutdown(address _token, bool _active) external protectedCall {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        LibStrategyBasketStorage.TokenVault storage vault = sbs.vaults[address(_token)];
+        LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
+
+        vault.emergencyShutdown = _active;
+        
+        // if activating disable mints by setting the cap to 0
+        if(_active) {
+            bs.maxcap = 0;
+        }
+
+        // TODO event
+    }
+
+    
+    function migrateStrategy(address _oldVersion, address _newVersion) protectedCall {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+
+        IStrategy oldStrategy = IStrategy(_oldVersion);
+        IStrategy newStrategy = IStrategy(_newVersion);
+        // TODO check if token is same for both strategies
+
+        address newStratToken = newStrategy.token;
+
+        require(_newVersion != address(0), "NEW_ADDRESS_ZERO");
+        require(sbs.strategies[_oldVersion].activation > 0, "OLD_STRATEGY_NOT_ACTIVE");
+        require(sbs.strategies[_newVersion].activation == 0, "NEW_STRATEGY_ALREADY_ACTIVE");
+        require(sbs.strategies[_oldVersion].token == newStratToken, "STRATEGY_TOKEN_MISMATCH");
+
+        StrategyParams memory strategyData = sbs.strategies[_oldVersion];
+
+        _revokeStrategy(_oldVersion);
+
+        // _revokeStrategy will lower the debtRatio
+        sbs.vaults[newStratToken].debtRatio += strategyData.debtRatio;
+        // Debt is migrated to new strategy
+        sbs.strategies[_oldVersion].totalDebt = 0;
+
+
+        // self.strategies[newVersion] = StrategyParams({
+        // performanceFee: strategy.performanceFee,
+        // # NOTE: use last report for activation time, so E[R] calc works
+        // activation: strategy.lastReport,
+        // debtRatio: strategy.debtRatio,
+        // minDebtPerHarvest: strategy.minDebtPerHarvest,
+        // maxDebtPerHarvest: strategy.maxDebtPerHarvest,
+        // lastReport: strategy.lastReport,
+        // totalDebt: strategy.totalDebt,
+        // totalGain: 0,
+        // totalLoss: 0,
+        // profitLimitRatio: strategy.profitLimitRatio,
+        // lossLimitRatio: strategy.lossLimitRatio,
+        // enforceChangeLimit: True,
+        // customCheck: strategy.customCheck
+    })
+        
+
+        
+    }
 
     //TODO
     // @external def addStrategyToQueue(strategy: address):
@@ -496,7 +555,7 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         return _creditAvailable(msg.sender);
     }
 
-    function _debtOutstanding(address _strategy) internal returns(uint256) {
+    function _debtOutstanding(address _strategy) internal view returns(uint256) {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         address token = sbs.strategies[_strategy].token;
 
@@ -521,6 +580,14 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         else {
             return strategyTotalDebt - strategyDebtLimit;
         }
+    }
+
+    function debtOutstanding(address _strategy) external view returns(uint256){
+        return _debtOutstanding(_strategy);
+    }
+
+    function debtOutstanding() external view returns(uint256) {
+        return _debtOutstanding(msg.sender);
     }
 
     // TODO make this internal vault specific

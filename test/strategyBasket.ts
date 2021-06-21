@@ -18,7 +18,7 @@ import {
 import {IExperiPieFactory} from "../typechain/IExperiPieFactory";
 import {IExperiPie} from "../typechain/IExperiPie";
 import TimeTraveler from "../utils/TimeTraveler";
-import { parseEther } from "ethers/lib/utils";
+import { formatEther, parseEther } from "ethers/lib/utils";
 
 chai.use(solidity);
 
@@ -102,11 +102,22 @@ describe("StrategyBasketFacet", function() {
     });
 
     describe("StrategyBasket specific", async() => {
+
+      const initialTokenAmount = parseEther("10");
+
       beforeEach(async() => {
         for (const token of testTokens) {
-          await token.transfer(experiPie.address, parseEther("10"));
+          await token.transfer(experiPie.address, initialTokenAmount);
           await experiPie.addToken(token.address);
         }
+
+        await experiPie.addStrategy(
+          testTokens[0].address, strategy.address,
+          5000,
+          parseEther("0.001"),
+          parseEther("100000000"),
+          2000
+        );
       });
 
       describe("addStrategy", async() => {
@@ -146,7 +157,7 @@ describe("StrategyBasketFacet", function() {
           await experiPie.setNextStrategyToken(token);
 
           // one strategy already attached before
-          for(let i = 0; i < maxStrategies - 1; i++) {
+          for(let i = 0; i < maxStrategies - 2; i++) {
             const extraStrategy = await (deployContract(signers[0], TestStrategyArtifact, [experiPie.address])) as TestStrategy;
             await experiPie.addStrategy(token, extraStrategy.address, 100, 1000, 1000, 1000);
           }
@@ -374,6 +385,24 @@ describe("StrategyBasketFacet", function() {
           )).to.be.revertedWith("TOO_GREEDY");
         });
       });
+
+      describe.only("report", async() => {
+        it("something", async() => {
+          // await strategy._toggleDelegation();
+          // const delegatedAssets = await strategy.delegatedAssets();
+
+          await strategy.harvest();
+
+          const strategyTestTokenBalance = await testTokens[0].balanceOf(strategy.address);
+          expect(strategyTestTokenBalance).to.eq(initialTokenAmount.div(2));
+          
+          await experiPie.updateStrategyDebtRatio(strategy.address, 1000);
+          await strategy.harvest();
+          const strategyTestTokenBalance2 = await testTokens[0].balanceOf(strategy.address);
+          expect(strategyTestTokenBalance2).to.eq(initialTokenAmount.div(10));
+        })
+      });
+
     });
 
       describe("Joining and exiting", async () => {

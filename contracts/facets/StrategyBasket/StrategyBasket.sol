@@ -71,7 +71,7 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // Check strategy parameters
         require(sbs.vaults[_token].debtRatio + _debtRatio <= MAX_BPS, "TOO_MUCH_DEBT_FOR_TOKEN");
         require(_minDebtPerHarvest <= _maxDebtPerHarvest, "MINDEBT_OVER_MAXDEBT");
-        require(_performanceFee <= (MAX_BPS - sbs.vaults[_token].performanceFee), "TOO_GREEDY");
+        require(_performanceFee <= MAX_BPS / 2, "TOO_GREEDY");
 
         // TODO Should we have emergency shutdown for a single asset? How?
         sbs.strategies[_strategy] = LibStrategyBasketStorage.StrategyParams({
@@ -182,7 +182,7 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     ) protectedCall external override {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
         require(sbs.strategies[_strategy].activation > 0, "STRATEGY_NOT_ADDED");
-        require(sbs.strategies[_strategy].performanceFee <= MAX_BPS, "TOO GREEDY");
+        require(sbs.strategies[_strategy].performanceFee <= MAX_BPS / 2, "TOO GREEDY");
 
         sbs.strategies[_strategy].performanceFee = _performanceFee;
         // TODO log StrategyUpdatePerformanceFee(strategy, performanceFee)
@@ -277,6 +277,14 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // lossLimitRatio: strategy.lossLimitRatio,
         // enforceChangeLimit: True,
         // customCheck: strategy.customCheck
+    }
+
+    function setPerformanceFee(address _token, uint256 _fee) external protectedCall {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        require(_fee < MAX_BPS / 2, "TOO_GREEDY");
+        sbs.vaults[_token].performanceFee = _fee;
+        // TODO event
+        // log UpdatePerformanceFee(fee)
     }
 
     //TODO
@@ -664,8 +672,6 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     function strategies() external view returns(YearnStrategyParams memory) {
         return strategies(msg.sender);
     }
-
-    @pure
 
     function apiVersion() external view returns(string memory) {
         return API_VERSION;

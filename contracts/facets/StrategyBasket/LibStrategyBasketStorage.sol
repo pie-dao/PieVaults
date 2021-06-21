@@ -17,6 +17,10 @@ library LibStrategyBasketStorage {
     uint256 totalDebt; // Total outstanding debt that Strategy has
     uint256 totalGain; // Total returns that Strategy has realized for Vault
     uint256 totalLoss; // Total losses that Strategy has realized for Vault
+    bool enforceChangeLimit; // Allow bypassing the lossRatioLimit checks 
+    uint256 profitLimitRatio; // Allowed Percentage of price per share positive changes
+    uint256 lossLimitRatio; // Allowed Percentage of price per share negative changes
+    address customCheck; // Address of custom check contract
   }
 
   struct TokenVault {

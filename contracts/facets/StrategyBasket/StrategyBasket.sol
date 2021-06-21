@@ -79,7 +79,11 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
             lastReport: block.timestamp,
             totalDebt: 0,
             totalGain: 0,
-            totalLoss: 0
+            totalLoss: 0,
+            enforceChangeLimit: true,
+            profitLimitRatio: 300, //3% default value
+            lossLimitRatio: 300, // 3% default value
+            customCheck: address(0)
         });
 
         // TODO StrategyAdded Event
@@ -222,28 +226,28 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         
         // if activating disable mints by setting the cap to 0
         if(_active) {
-            bs.maxcap = 0;
+            bs.maxCap = 0;
         }
 
         // TODO event
     }
 
     
-    function migrateStrategy(address _oldVersion, address _newVersion) protectedCall {
+    function migrateStrategy(address _oldVersion, address _newVersion) protectedCall external {
         LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
 
         IStrategy oldStrategy = IStrategy(_oldVersion);
         IStrategy newStrategy = IStrategy(_newVersion);
         // TODO check if token is same for both strategies
 
-        address newStratToken = newStrategy.token;
+        address newStratToken = newStrategy.want();
 
         require(_newVersion != address(0), "NEW_ADDRESS_ZERO");
         require(sbs.strategies[_oldVersion].activation > 0, "OLD_STRATEGY_NOT_ACTIVE");
         require(sbs.strategies[_newVersion].activation == 0, "NEW_STRATEGY_ALREADY_ACTIVE");
         require(sbs.strategies[_oldVersion].token == newStratToken, "STRATEGY_TOKEN_MISMATCH");
 
-        StrategyParams memory strategyData = sbs.strategies[_oldVersion];
+        LibStrategyBasketStorage.StrategyParams memory strategyData = sbs.strategies[_oldVersion];
 
         _revokeStrategy(_oldVersion);
 
@@ -268,10 +272,6 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // lossLimitRatio: strategy.lossLimitRatio,
         // enforceChangeLimit: True,
         // customCheck: strategy.customCheck
-    })
-        
-
-        
     }
 
     //TODO

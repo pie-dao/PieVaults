@@ -55,6 +55,8 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // Check if queue is full
         require(sbs.strategiesCount < MAXIMUM_STRATEGIES - 1, "TOO_MANY_STRATEGIES");
 
+        require(!sbs.vaults[_token].emergencyShutdown, "EMERGENCY_SHUTDOWN");
+
         // Check strategy configuration
         require(_token != address(0), "ZERO_TOKEN");
         require(_strategy != address(0), "ZERO_STRATEGY");

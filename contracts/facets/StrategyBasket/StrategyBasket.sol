@@ -188,6 +188,15 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // TODO log StrategyUpdatePerformanceFee(strategy, performanceFee)
     }
 
+    function setStrategyEnforceChangeLimit(address _strategy, bool _enabled) protectedCall external {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        require(sbs.strategies[_strategy].activation > 0, "STRATEGY_NOT_ADDED");
+
+        sbs.strategies[_strategy].enforceChangeLimit = _enabled;
+
+        // TODO event
+    }
+
     function _revokeStrategy(
         address _strategy
     ) internal {

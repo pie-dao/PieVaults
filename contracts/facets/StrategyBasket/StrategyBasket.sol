@@ -7,6 +7,7 @@ import "../Basket/LibBasketStorage.sol";
 import "./LibStrategyBasketStorage.sol";
 import "../../interfaces/IStrategy.sol";
 import "../../interfaces/IStrategyBasketFacet.sol";
+import "../../interfaces/ICustomHealthCheck.sol";
 import { StrategyParams as YearnStrategyParams } from "../../interfaces/VaultAPI.sol";
 
 import "@openzeppelin/contracts/math/Math.sol";
@@ -205,6 +206,14 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         sbs.strategies[_strategy].profitLimitRatio = _profitLimitRatio;
 
         // TODO event
+    }
+
+    function setStrategyCustomCheck(address _strategy, address _customCheck) protectedCall external {
+        LibStrategyBasketStorage.StrategyBasketStorage storage sbs = LibStrategyBasketStorage.strategyBasketStorage();
+        if (_customCheck != address(0)) {
+            require(ICustomHealthCheck(_customCheck).check(0, 0, _strategy), "CHECK_FAILED");
+        }
+        sbs.strategies[_strategy].customCheck = _customCheck;
     }
 
     function _revokeStrategy(

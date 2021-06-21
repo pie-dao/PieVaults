@@ -21,6 +21,9 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
     uint256 constant MAX_BPS = 10000; //TODO
     uint256 constant DEGREDATION_COEFFICIENT = 1 ether;
 
+    // TODO consider following the Yearn api versions for compatibility
+    string constant API_VERSION = "0.1.0";
+
     //emit StrategyAdded;
 
 
@@ -660,6 +663,12 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
 
     function strategies() external view returns(YearnStrategyParams memory) {
         return strategies(msg.sender);
+    }
+
+    @pure
+
+    function apiVersion() external view returns(string memory) {
+        return API_VERSION;
     }
 
 }

@@ -30,5 +30,7 @@ interface IStrategy {
 
     function withdraw(uint256 amount) external returns(uint256);
 
+    function migrate(address newStrategy) external;
+
     event Harvested(uint256 profit, uint256 loss, uint256 debtPayment, uint256 debtOutstanding);
 }

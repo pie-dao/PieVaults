@@ -289,22 +289,34 @@ contract StrategyBasket is BasketFacet, IStrategyBasketFacet {
         // Debt is migrated to new strategy
         sbs.strategies[_oldVersion].totalDebt = 0;
 
+        sbs.strategies[_newVersion] = 
 
-        // self.strategies[newVersion] = StrategyParams({
-        // performanceFee: strategy.performanceFee,
-        // # NOTE: use last report for activation time, so E[R] calc works
-        // activation: strategy.lastReport,
-        // debtRatio: strategy.debtRatio,
-        // minDebtPerHarvest: strategy.minDebtPerHarvest,
-        // maxDebtPerHarvest: strategy.maxDebtPerHarvest,
-        // lastReport: strategy.lastReport,
-        // totalDebt: strategy.totalDebt,
-        // totalGain: 0,
-        // totalLoss: 0,
-        // profitLimitRatio: strategy.profitLimitRatio,
-        // lossLimitRatio: strategy.lossLimitRatio,
-        // enforceChangeLimit: True,
-        // customCheck: strategy.customCheck
+        sbs.strategies[_newVersion] = LibStrategyBasketStorage.StrategyParams({
+            token: newStratToken,
+            performanceFee: strategyData.performanceFee,
+            activation: strategyData.lastReport,
+            debtRatio: strategyData.debtRatio,
+            minDebtPerHarvest: strategyData.minDebtPerHarvest,
+            maxDebtPerHarvest: strategyData.maxDebtPerHarvest,
+            lastReport: strategyData.lastReport,
+            totalDebt: strategyData.totalDebt,
+            totalGain: 0,
+            totalLoss: 0,
+            enforceChangeLimit: true,
+            profitLimitRatio: strategyData.profitLimitRatio, //3% default value
+            lossLimitRatio: strategyData.lossLimitRatio, // 3% default value
+            customCheck: strategyData.customCheck
+        });
+
+        IStrategy(_oldVersion).migrate(_newVersion);
+        // TODO event
+
+        for(uint256 i = 0; i < sbs.vaults[newStratToken].withdrawalQueue.length; i ++) {
+            sbs.vaults[newStratToken].withdrawalQueue[i] == _oldVersion;
+            sbs.vaults[newStratToken].withdrawalQueue[i] = _newVersion;
+            return; // done reordering
+        }
+
     }
 
     function setPerformanceFee(address _token, uint256 _fee) external protectedCall {

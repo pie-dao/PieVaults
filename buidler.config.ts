@@ -405,6 +405,9 @@ task("deploy-pie-vault-cut")
         },
     ];
 
+    console.log("CUT JSON:");
+    console.log("");
+
     console.log(JSON.stringify(diamondCut, null, 2));
 })
 

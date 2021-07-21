@@ -344,4 +344,68 @@ task("deploy-deposit-logic-decimal-wrapper")
     console.log(`Deployed depositLogicDecimalWrapper at: ${depositLogicDecimalWrapper.address}`);
 });
 
+task("deploy-pie-vault-cut")
+  .setAction(async(taskArgs, {ethers}) => {
+    const signers = await ethers.getSigners();
+
+    const overrides = {}
+    const contracts: any[] = [];
+
+    const basketFacet = (await deployContract(signers[0], BasketFacetArtifact, [], overrides)) as BasketFacet;
+    contracts.push({name: "basketFacet", address: basketFacet.address});
+    const erc20Facet = (await deployContract(signers[0], Erc20FacetArtifact, [], overrides)) as Erc20Facet;
+    contracts.push({name: "erc20Facet", address: erc20Facet.address});
+    const callFacet = (await deployContract(signers[0], CallFacetArtifact, [], overrides)) as CallFacet;
+    contracts.push({name: "callFacet", address: callFacet.address});
+    const diamondCutFacet = (await deployContract(signers[0], DiamondCutFacetArtifact, [], overrides)) as DiamondCutFacet;
+    contracts.push({name: "diamondCutFacet", address: diamondCutFacet.address});
+    const diamondLoupeFacet = (await deployContract(signers[0], DiamondLoupeFacetArtifact, [], overrides)) as DiamondLoupeFacet;
+    contracts.push({name: "diamondLoupeFacet", address: diamondLoupeFacet.address});
+    const ownershipFacet = (await deployContract(signers[0], OwnershipFacetArtifact, [], overrides)) as OwnershipFacet;
+    contracts.push({name: "ownershipFacet", address: ownershipFacet.address});
+
+    console.table(contracts);
+
+    const FacetCutAction = {
+      Add: 0,
+      Replace: 1,
+      Remove: 2,
+    };
+
+    const diamondCut = [
+        {
+            action: FacetCutAction.Add,
+            facetAddress: basketFacet.address,
+            functionSelectors: getSelectors(basketFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: erc20Facet.address,
+            functionSelectors: getSelectors(erc20Facet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: callFacet.address,
+            functionSelectors: getSelectors(callFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: diamondCutFacet.address,
+            functionSelectors: getSelectors(diamondCutFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: diamondLoupeFacet.address,
+            functionSelectors: getSelectors(diamondLoupeFacet)
+        },
+        {
+            action: FacetCutAction.Add,
+            facetAddress: ownershipFacet.address,
+            functionSelectors: getSelectors(ownershipFacet)
+        },
+    ];
+
+    console.log(JSON.stringify(diamondCut, null, 2));
+})
+
 export default config;

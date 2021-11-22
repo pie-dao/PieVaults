@@ -1,12 +1,10 @@
-import { usePlugin } from  "@nomiclabs/buidler/config";
-
-usePlugin("@nomiclabs/buidler-ethers");
-usePlugin('solidity-coverage')
+import "@nomiclabs/buidler-ethers";
+import 'solidity-coverage';
 
 const config = {
-  defaultNetwork: 'buidlerevm',
+  defaultNetwork: 'hardhat',
   networks: {
-    buidlerevm: {
+    hardhat: {
       gasPrice: 0,
       blockGasLimit: 100000000,
     },
@@ -22,10 +20,12 @@ const config = {
   },
   solc: {
     version: '0.7.1',
-    optimizer: {
-      // PieFactory pushes contract size over limit. Consider reducing factory size
-      enabled: true,
-      runs: 200
+    settings: {
+      optimizer: {
+        // PieFactory pushes contract size over limit. Consider reducing factory size
+        enabled: true,
+        runs:1000
+      }
     }
   },
 }

@@ -1,8 +1,8 @@
 require("dotenv").config();
 
-import { usePlugin, task, types } from  "@nomiclabs/buidler/config";
+import { task, types } from  "@nomiclabs/buidler/config";
 
-import {Signer, Wallet, utils, constants, Contract, BytesLike} from "ethers";
+import { Wallet, utils, constants, Contract, BytesLike} from "ethers";
 import {deployContract} from "ethereum-waffle";
 
 import DiamondFactoryArtifact from './artifacts/DiamondFactoryContract.json';
@@ -24,10 +24,10 @@ import { LendingLogicAaveFactory } from "./typechain/LendingLogicAaveFactory";
 import { LendingManagerFactory } from "./typechain/LendingManagerFactory";
 import { StakingLogicYGovFactory } from "./typechain/StakingLogicYGovFactory";
 
-usePlugin("@nomiclabs/buidler-ethers");
-usePlugin('solidity-coverage');
-usePlugin("@nomiclabs/buidler-etherscan");
-usePlugin('solidity-coverage');
+import "@nomiclabs/buidler-ethers";
+import 'solidity-coverage';
+import "@nomiclabs/buidler-etherscan";
+import 'solidity-coverage';
 
 function getSelectors(contract: Contract) {
   const signatures: BytesLike[] = [];
@@ -39,9 +39,9 @@ function getSelectors(contract: Contract) {
 }
 
 const config = {
-  defaultNetwork: 'buidlerevm',
+  defaultNetwork: 'hardhat',
   networks: {
-    buidlerevm: {
+    hardhat: {
       gasPrice: 0,
       blockGasLimit: 10000000,
     },
@@ -68,10 +68,12 @@ const config = {
   },
   solc: {
     version: '0.7.1',
-    optimizer: {
-      // Factory goes above contract size limit
-      enabled: true,
-      runs: 200
+    settings: {
+      optimizer: {
+        // Factory goes above contract size limit
+        enabled: true,
+        runs: 200
+      }
     }
   },
   etherscan: { apiKey: process.env.ETHERSCAN_KEY }

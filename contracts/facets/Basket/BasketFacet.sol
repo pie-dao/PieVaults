@@ -150,6 +150,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
 
     // Must be overwritten to withdraw from strategies
     function exitPool(uint256 _amount) external override virtual noReentry {
+        require(tx.origin == msg.sender, "NOT_ALLOWED");
         require(!this.getLock(), "POOL_LOCKED");
         chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
@@ -166,7 +167,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
             token.safeTransfer(msg.sender, tokenAmount);
         }
 
-         // If there is any fee that should go to the beneficiary mint it
+        // If there is any fee that should go to the beneficiary mint it
         if(
             feeAmount != 0 &&
             bs.exitFeeBeneficiaryShare != 0 &&

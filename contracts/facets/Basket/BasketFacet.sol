@@ -8,9 +8,10 @@ import "../ERC20/LibERC20Storage.sol";
 import "../ERC20/LibERC20.sol";
 import "../shared/Reentry/ReentryProtection.sol";
 import "../shared/Access/CallProtection.sol";
+import "../shared/Access/AccessControl.sol";
 import "./LibBasketStorage.sol";
 
-contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
+contract BasketFacet is ReentryProtection, CallProtection, AccessControl, IBasketFacet {
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
@@ -149,7 +150,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
     }
 
     // Must be overwritten to withdraw from strategies
-    function exitPool(uint256 _amount) external override virtual noReentry {
+    function exitPool(uint256 _amount) external override virtual onlyAllowed noReentry {
         require(!this.getLock(), "POOL_LOCKED");
         chargeOutstandingAnnualizedFee();
         LibBasketStorage.BasketStorage storage bs = LibBasketStorage.basketStorage();
@@ -166,7 +167,7 @@ contract BasketFacet is ReentryProtection, CallProtection, IBasketFacet {
             token.safeTransfer(msg.sender, tokenAmount);
         }
 
-         // If there is any fee that should go to the beneficiary mint it
+        // If there is any fee that should go to the beneficiary mint it
         if(
             feeAmount != 0 &&
             bs.exitFeeBeneficiaryShare != 0 &&
